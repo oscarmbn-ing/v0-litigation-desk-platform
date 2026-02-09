@@ -1,0 +1,67 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+}
+
+@layer base {
+  :root {
+    --background: 210 20% 98%;
+    --foreground: 234 40% 10%;
+    --card: 0 0% 100%;
+    --card-foreground: 234 40% 10%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 234 40% 10%;
+    --primary: 239 84% 17%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 210 20% 96%;
+    --secondary-foreground: 234 40% 10%;
+    --muted: 210 15% 95%;
+    --muted-foreground: 215 16% 47%;
+    --accent: 210 20% 96%;
+    --accent-foreground: 234 40% 10%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 220 13% 91%;
+    --input: 220 13% 91%;
+    --ring: 239 84% 17%;
+    --chart-1: 239 84% 67%;
+    --chart-2: 160 84% 39%;
+    --chart-3: 30 80% 55%;
+    --chart-4: 43 74% 66%;
+    --chart-5: 27 87% 67%;
+    --radius: 0.75rem;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 234 40% 10%;
+    --sidebar-primary: 239 84% 17%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 239 84% 96%;
+    --sidebar-accent-foreground: 239 84% 17%;
+    --sidebar-border: 220 13% 91%;
+    --sidebar-ring: 239 84% 67%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+  body {
+    @apply bg-background text-foreground;
+  }
+}
+
+@keyframes ping-slow {
+  75%, 100% {
+    transform: scale(2);
+    opacity: 0;
+  }
+}
+
+.animate-ping-slow {
+  animation: ping-slow 1.5s cubic-bezier(0, 0, 0.2, 1) infinite;
+}
