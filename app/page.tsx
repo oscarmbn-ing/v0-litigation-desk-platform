@@ -1,18 +1,46 @@
 "use client"
 
-import { useState } from "react"
+import { useState, useEffect } from "react"
 import type { Client } from "@/lib/data"
+import { CLIENTS_DATA } from "@/lib/data" // Import data source
 import { Sidebar } from "@/components/desk/sidebar"
 import { ClientList } from "@/components/desk/client-list"
 import { ClientDetail } from "@/components/desk/client-detail"
+import { AIAssistant } from "@/components/desk/ai-assistant"
+import { TasksView } from "@/components/desk/tasks-view"
+import { HomeView } from "@/components/desk/home-view"
+import { Scale, Building2, Landmark, ExternalLink } from "lucide-react"
+import { Button } from "@/components/ui/button"
+import { useSearchParams } from "next/navigation" // Import useSearchParams
 
 export default function Page() {
+  const searchParams = useSearchParams()
+  const initialView = searchParams.get("view")
+  const initialClientId = searchParams.get("clientId")
+
   const [selectedClient, setSelectedClient] = useState<Client | null>(null)
   const [activeTab, setActiveTab] = useState<"list" | "detail">("list")
+  const [activeSection, setActiveSection] = useState<
+    "home" | "clientes" | "tareas"
+  >("home")
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(true)
+  const [targetTaskId, setTargetTaskId] = useState<string | null>(null)
+
+  useEffect(() => {
+    if (initialView === "clients" && initialClientId) {
+      const client = CLIENTS_DATA.find(c => c.id === Number(initialClientId))
+      if (client) {
+        setSelectedClient(client)
+        setActiveSection("clientes")
+        setActiveTab("detail")
+      }
+    }
+  }, [initialView, initialClientId])
 
   const handleClientClick = (client: Client) => {
     setSelectedClient(client)
     setActiveTab("detail")
+    setActiveSection("clientes")
   }
 
   const handleBack = () => {
@@ -20,46 +48,121 @@ export default function Page() {
     setActiveTab("list")
   }
 
+  const handleNavigateToTask = (taskId: string) => {
+    setTargetTaskId(taskId)
+    setActiveSection("tareas")
+  }
+
   return (
-    <div className="bg-slate-50 min-h-screen text-slate-800 font-sans pl-0 md:pl-20 lg:pl-64">
-      <Sidebar />
+    <div
+      className="bg-slate-50 min-h-screen text-slate-800 font-sans transition-all duration-300"
+      style={{ paddingLeft: sidebarCollapsed ? "4rem" : "14rem" }}
+    >
+      <Sidebar
+        collapsed={sidebarCollapsed}
+        onToggle={() => setSidebarCollapsed(!sidebarCollapsed)}
+        activeSection={activeSection}
+        onSelectSection={(section) => {
+          setActiveSection(section)
+          if (section !== "clientes") {
+            setActiveTab("list")
+          }
+        }}
+      />
 
       <header className="bg-white border-b border-slate-100 px-6 py-4 flex justify-between items-center sticky top-0 z-20">
         <div>
           <h1 className="text-xl font-bold text-slate-900">
-            {activeTab === "list" ? "Radar de Clientes" : "Centro de Comando"}
+            {activeSection === "tareas"
+              ? "Misiones"
+              : activeSection === "home"
+                ? "Inicio"
+                : activeSection === "clientes" && activeTab === "detail"
+                  ? "Centro de Comando"
+                  : "Radar de Clientes"}
           </h1>
           <p className="text-sm text-slate-500">
-            {activeTab === "list"
-              ? "Resumen operativo del dia"
-              : "Gestion Integral"}
+            {activeSection === "tareas"
+              ? "Revision y accion sobre movimientos del expediente"
+              : activeSection === "home"
+                ? "Panel general"
+                : activeSection === "clientes" && activeTab === "detail"
+                  ? "Gestion Integral"
+                  : "Resumen operativo del dia"}
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
-          <div className="text-right hidden sm:block">
-            <p className="text-sm font-medium text-slate-900">Jose Herrera</p>
-            <p className="text-xs text-slate-500">Abogado Tramitador</p>
-          </div>
-          <div className="w-10 h-10 bg-slate-200 rounded-full overflow-hidden">
-            <img
-              src="https://api.dicebear.com/7.x/avataaars/svg?seed=Jose"
-              alt="Avatar de Jose Herrera"
-              className="w-full h-full"
-            />
-          </div>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 text-slate-600 hover:text-indigo-900 hover:bg-indigo-50"
+            onClick={() => window.open("https://ojv.pjud.cl/", "_blank")}
+            title="Oficina Judicial Virtual"
+          >
+            <Scale className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">OJV</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 text-slate-600 hover:text-emerald-900 hover:bg-emerald-50"
+            onClick={() => window.open("https://homer.sii.cl/", "_blank")}
+            title="Servicio de Impuestos Internos"
+          >
+            <Building2 className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">SII</span>
+          </Button>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 text-slate-600 hover:text-rose-900 hover:bg-rose-50"
+            onClick={() => window.open("https://www.cmfchile.cl/", "_blank")}
+            title="Comisión para el Mercado Financiero"
+          >
+            <Landmark className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">CMF</span>
+          </Button>
         </div>
       </header>
 
-      <main className="p-4 md:p-6 max-w-7xl mx-auto">
-        {activeTab === "list" && (
+      <main className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto">
+        {activeSection === "home" && (
+          <HomeView
+            onNavigate={(section) => {
+              setActiveSection(section)
+              if (section === "clientes") setActiveTab("list")
+            }}
+          />
+        )}
+
+        {activeSection === "tareas" && (
+          <TasksView
+            initialTaskId={targetTaskId}
+            onOpenClient={(client) => {
+              setSelectedClient(client)
+              setActiveSection("clientes")
+              setActiveTab("detail")
+            }}
+          />
+        )}
+
+        {activeSection === "clientes" && activeTab === "list" && (
           <ClientList onSelectClient={handleClientClick} />
         )}
 
-        {activeTab === "detail" && selectedClient && (
-          <ClientDetail client={selectedClient} onBack={handleBack} />
+        {activeSection === "clientes" && activeTab === "detail" && selectedClient && (
+          <ClientDetail
+            client={selectedClient}
+            onBack={handleBack}
+            onNavigateToTask={handleNavigateToTask}
+          />
         )}
       </main>
+
+      <AIAssistant />
     </div>
   )
 }

@@ -31,7 +31,7 @@ export function MiniPipeline({ currentStage }: { currentStage: number }) {
       {JUDICIAL_STAGES.map((stage) => {
         let style = "bg-slate-200"
         if (stage.id < currentStage) style = "bg-indigo-950"
-        if (stage.id === currentStage) style = "bg-indigo-500 animate-pulse"
+        if (stage.id === currentStage) style = "bg-indigo-950 animate-pulse"
 
         return (
           <div
