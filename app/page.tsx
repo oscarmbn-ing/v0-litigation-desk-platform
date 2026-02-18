@@ -13,7 +13,9 @@ import { Scale, Building2, Landmark, ExternalLink } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSearchParams } from "next/navigation" // Import useSearchParams
 
-export default function Page() {
+import { Suspense } from "react" // Import Suspense
+
+function PageContent() {
   const searchParams = useSearchParams()
   const initialView = searchParams.get("view")
   const initialClientId = searchParams.get("clientId")
@@ -164,5 +166,13 @@ export default function Page() {
 
       <AIAssistant />
     </div>
+  )
+}
+
+export default function Page() {
+  return (
+    <Suspense fallback={<div>Cargando...</div>}>
+      <PageContent />
+    </Suspense>
   )
 }
