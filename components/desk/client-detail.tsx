@@ -79,9 +79,7 @@ export function ClientDetail({
   const [bitacoraModalTab, setBitacoraModalTab] = useState<
     "litigios" | "renegociacion" | "patrimonial"
   >("litigios")
-  const [expandedCaseIds, setExpandedCaseIds] = useState<string[]>(
-    client.cases.length > 0 ? [client.cases[0].id] : []
-  )
+  const [expandedCaseIds, setExpandedCaseIds] = useState<string[]>([])
   const [openCaseDetails, setOpenCaseDetails] = useState<Record<string, boolean>>(
     Object.fromEntries(client.cases.map((c) => [c.id, true])) as Record<
       string,
@@ -364,6 +362,13 @@ export function ClientDetail({
     setSelectedSummaryIds(summaryMovements.slice(0, 4).map((m) => m.id))
   }, [showSummaryModal, client.email, client.name, contextView, summaryMovements])
 
+  useEffect(() => {
+    if (!showBitacoraModal) return
+    setExpandedCaseIds([])
+    setOpenCaseDetails(Object.fromEntries(client.cases.map((c) => [c.id, false])))
+    setOpenCaseBitacora(Object.fromEntries(client.cases.map((c) => [c.id, false])))
+  }, [showBitacoraModal])
+
   const selectedSummaryMovements = summaryMovements.filter((movement) =>
     selectedSummaryIds.includes(movement.id)
   )
@@ -406,8 +411,8 @@ export function ClientDetail({
       <Card className="rounded-3xl shadow-sm border border-slate-200 mb-6 relative z-10 overflow-visible">
         <div
           className={`absolute top-0 left-0 w-full h-1 rounded-t-3xl ${contextView === "judicial"
-              ? "bg-gradient-to-r from-indigo-950 via-violet-900 to-indigo-950"
-              : "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"
+            ? "bg-gradient-to-r from-indigo-950 via-violet-900 to-indigo-950"
+            : "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"
             }`}
         />
         <CardContent className="p-8 md:p-10">
@@ -435,8 +440,8 @@ export function ClientDetail({
                     <button
                       type="button"
                       className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${client.cases.length > 1
-                          ? "cursor-pointer hover:bg-slate-50 border-violet-200 bg-white shadow-sm"
-                          : "border-transparent bg-slate-50 text-slate-500"
+                        ? "cursor-pointer hover:bg-slate-50 border-violet-200 bg-white shadow-sm"
+                        : "border-transparent bg-slate-50 text-slate-500"
                         }`}
                       onClick={() =>
                         client.cases.length > 1 &&
@@ -468,8 +473,8 @@ export function ClientDetail({
                             type="button"
                             key={c.id}
                             className={`w-full text-left px-4 py-3 text-sm cursor-pointer transition-colors ${c.id === activeCaseId
-                                ? "bg-indigo-50 text-indigo-900 font-semibold"
-                                : "hover:bg-slate-50 text-slate-700"
+                              ? "bg-indigo-50 text-indigo-900 font-semibold"
+                              : "hover:bg-slate-50 text-slate-700"
                               }`}
                             onClick={() => handleCaseChange(c.id)}
                           >
@@ -549,8 +554,8 @@ export function ClientDetail({
                 type="button"
                 onClick={() => handleContextChange("judicial")}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${contextView === "judicial"
-                    ? "bg-indigo-950 text-white shadow-sm"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                  ? "bg-indigo-950 text-white shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
                   }`}
               >
                 Litigios
@@ -559,8 +564,8 @@ export function ClientDetail({
                 type="button"
                 onClick={() => handleContextChange("protection")}
                 className={`flex items-center gap-2 px-4 py-1.5 rounded-md text-sm font-semibold transition-all ${contextView === "protection"
-                    ? "bg-white text-slate-900 border border-slate-200 shadow-sm"
-                    : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
+                  ? "bg-white text-slate-900 border border-slate-200 shadow-sm"
+                  : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
                   }`}
               >
                 P. Patrimonial
@@ -591,6 +596,7 @@ export function ClientDetail({
                   selectedStageId={viewingStageId}
                   onSelectStage={setViewingStageId}
                   themeColor={currentTheme}
+                  stageDates={currentData?.stageDates}
                 />
 
                 <div className="mt-6 pt-4 border-t border-slate-200">
@@ -734,8 +740,8 @@ export function ClientDetail({
                       <div className="text-right">
                         <span
                           className={`text-xs font-bold ${task.status === "urgent"
-                              ? "text-rose-600"
-                              : "text-slate-600"
+                            ? "text-rose-600"
+                            : "text-slate-600"
                             }`}
                         >
                           {task.status === "urgent" ? "Hoy" : task.due}
@@ -774,6 +780,8 @@ export function ClientDetail({
               description={(currentData as typeof client.judicialData).description}
               strategy={(currentData as typeof client.judicialData).strategy}
               tactics={(currentData as typeof client.judicialData).tactics}
+              debtAmount={(currentData as typeof client.judicialData).debtAmount}
+              client={client}
             />
           ) : currentData ? (
             <ProtectionWidget contractData={currentData as ContractData} />
@@ -800,7 +808,7 @@ export function ClientDetail({
                   className="w-full bg-indigo-950 hover:bg-indigo-900 text-white font-semibold py-2.5 rounded-lg"
                   onClick={() => setShowBitacoraModal(true)}
                 >
-                  Bitácora
+                  Historial completo
                 </Button>
                 <Button
                   variant="outline"
@@ -834,8 +842,8 @@ export function ClientDetail({
                 type="button"
                 onClick={() => setBitacoraModalTab("litigios")}
                 className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all ${bitacoraModalTab === "litigios"
-                    ? "bg-indigo-950 text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-800"
+                  ? "bg-indigo-950 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-800"
                   }`}
               >
                 Litigios
@@ -844,8 +852,8 @@ export function ClientDetail({
                 type="button"
                 onClick={() => setBitacoraModalTab("renegociacion")}
                 className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all ${bitacoraModalTab === "renegociacion"
-                    ? "bg-indigo-950 text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-800"
+                  ? "bg-indigo-950 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-800"
                   }`}
               >
                 Renegociación
@@ -854,8 +862,8 @@ export function ClientDetail({
                 type="button"
                 onClick={() => setBitacoraModalTab("patrimonial")}
                 className={`px-3 py-1.5 text-sm font-semibold rounded-lg transition-all ${bitacoraModalTab === "patrimonial"
-                    ? "bg-indigo-950 text-white shadow-sm"
-                    : "text-slate-600 hover:text-slate-800"
+                  ? "bg-indigo-950 text-white shadow-sm"
+                  : "text-slate-600 hover:text-slate-800"
                   }`}
               >
                 P. Patrimonial
@@ -1128,8 +1136,8 @@ export function ClientDetail({
                   type="button"
                   onClick={() => setSummaryScopeFilter("all")}
                   className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${summaryScopeFilter === "all"
-                      ? "bg-indigo-950 text-white"
-                      : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-indigo-950 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
                     }`}
                 >
                   Todos
@@ -1138,8 +1146,8 @@ export function ClientDetail({
                   type="button"
                   onClick={() => setSummaryScopeFilter("judicial")}
                   className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${summaryScopeFilter === "judicial"
-                      ? "bg-indigo-950 text-white"
-                      : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-indigo-950 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
                     }`}
                 >
                   Litigios
@@ -1148,8 +1156,8 @@ export function ClientDetail({
                   type="button"
                   onClick={() => setSummaryScopeFilter("protection")}
                   className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${summaryScopeFilter === "protection"
-                      ? "bg-indigo-950 text-white"
-                      : "text-slate-600 hover:bg-slate-100"
+                    ? "bg-indigo-950 text-white"
+                    : "text-slate-600 hover:bg-slate-100"
                     }`}
                 >
                   P. Patrimonial
@@ -1164,12 +1172,12 @@ export function ClientDetail({
                     <label
                       key={movement.id}
                       className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${isProtectionMovement
-                          ? checked
-                            ? "bg-emerald-50/60 border-emerald-200"
-                            : "bg-emerald-50/35 border-emerald-100 hover:border-emerald-200"
-                          : checked
-                            ? "bg-indigo-50/60 border-indigo-200"
-                            : "bg-indigo-50/35 border-indigo-100 hover:border-indigo-200"
+                        ? checked
+                          ? "bg-emerald-50/60 border-emerald-200"
+                          : "bg-emerald-50/35 border-emerald-100 hover:border-emerald-200"
+                        : checked
+                          ? "bg-indigo-50/60 border-indigo-200"
+                          : "bg-indigo-50/35 border-indigo-100 hover:border-indigo-200"
                         }`}
                     >
                       <input
@@ -1243,8 +1251,8 @@ export function ClientDetail({
                           <div
                             key={movement.id}
                             className={`rounded-lg border p-3 ${isProtectionMovement
-                                ? "border-emerald-200 bg-emerald-50/45"
-                                : "border-indigo-200 bg-indigo-50/45"
+                              ? "border-emerald-200 bg-emerald-50/45"
+                              : "border-indigo-200 bg-indigo-50/45"
                               }`}
                           >
                             <div className="flex items-start justify-between gap-2">
@@ -1253,8 +1261,8 @@ export function ClientDetail({
                               </p>
                               <span
                                 className={`text-[11px] font-semibold rounded-full px-2 py-0.5 shrink-0 border ${isProtectionMovement
-                                    ? "text-emerald-700 bg-emerald-100/80 border-emerald-200"
-                                    : "text-indigo-700 bg-indigo-100/80 border-indigo-200"
+                                  ? "text-emerald-700 bg-emerald-100/80 border-emerald-200"
+                                  : "text-indigo-700 bg-indigo-100/80 border-indigo-200"
                                   }`}
                               >
                                 {movement.source}

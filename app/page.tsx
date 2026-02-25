@@ -9,7 +9,7 @@ import { ClientDetail } from "@/components/desk/client-detail"
 import { AIAssistant } from "@/components/desk/ai-assistant"
 import { TasksView } from "@/components/desk/tasks-view"
 import { HomeView } from "@/components/desk/home-view"
-import { Scale, Building2, Landmark, ExternalLink } from "lucide-react"
+import { Scale, Building2, Landmark, ExternalLink, BookOpen } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { useSearchParams } from "next/navigation" // Import useSearchParams
 
@@ -94,12 +94,12 @@ function PageContent() {
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        {activeSection !== "home" && <div className="flex items-center gap-2">
           <Button
             variant="ghost"
             size="sm"
             className="flex items-center gap-2 text-slate-600 hover:text-indigo-900 hover:bg-indigo-50"
-            onClick={() => window.open("https://ojv.pjud.cl/", "_blank")}
+            onClick={() => window.open("https://oficinajudicialvirtual.pjud.cl/home/index.php#", "_blank")}
             title="Oficina Judicial Virtual"
           >
             <Scale className="h-4 w-4" />
@@ -127,7 +127,18 @@ function PageContent() {
             <Landmark className="h-4 w-4" />
             <span className="hidden sm:inline font-medium">CMF</span>
           </Button>
-        </div>
+
+          <Button
+            variant="ghost"
+            size="sm"
+            className="flex items-center gap-2 text-slate-600 hover:text-amber-900 hover:bg-amber-50"
+            onClick={() => window.open("https://www.boletinconcursal.cl/boletin/procedimientos", "_blank")}
+            title="Boletín Concursal"
+          >
+            <BookOpen className="h-4 w-4" />
+            <span className="hidden sm:inline font-medium">BCL</span>
+          </Button>
+        </div>}
       </header>
 
       <main className="p-6 md:p-8 lg:p-10 max-w-7xl mx-auto">

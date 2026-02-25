@@ -12,6 +12,7 @@ import {
     Flame,
     Trophy,
     TrendingUp,
+    BookOpen,
 } from "lucide-react"
 import { Calendar } from "@/components/ui/calendar"
 import { useState } from "react"
@@ -242,7 +243,7 @@ export function HomeView({
 
                     <div className="space-y-2">
                         <a
-                            href="https://ojv.pjud.cl/"
+                            href="https://oficinajudicialvirtual.pjud.cl/home/index.php#"
                             target="_blank"
                             rel="noopener noreferrer"
                             className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
@@ -280,6 +281,20 @@ export function HomeView({
                             </div>
                             <div>
                                 <span className="block text-xs font-semibold text-slate-700">CMF</span>
+                            </div>
+                        </a>
+
+                        <a
+                            href="https://www.boletinconcursal.cl/boletin/procedimientos"
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="flex items-center gap-3 p-2.5 rounded-xl hover:bg-slate-50 transition-colors group"
+                        >
+                            <div className="bg-violet-50 p-2 rounded-lg text-violet-600 group-hover:text-violet-700 group-hover:bg-white border border-transparent group-hover:border-violet-100 transition-all">
+                                <BookOpen size={18} />
+                            </div>
+                            <div>
+                                <span className="block text-xs font-semibold text-slate-700">Boletín Concursal</span>
                             </div>
                         </a>
                     </div>

@@ -28,6 +28,19 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select"
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover"
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command"
 import { Textarea } from "@/components/ui/textarea"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
@@ -37,6 +50,8 @@ import {
   CheckCircle2,
   ChevronRight,
   ChevronDown,
+  ChevronsUpDown,
+  Check,
   Filter,
   Inbox,
   Network,
@@ -56,6 +71,7 @@ import {
   Unlock,
   ChevronUp,
   User,
+  ExternalLink,
 } from "lucide-react"
 
 /* ─── Types ─── */
@@ -119,6 +135,7 @@ type Recommendation = {
   accepted?: boolean
   reason?: string
   type?: string
+  assignee?: string
 }
 
 type TimelineEvent = {
@@ -260,8 +277,8 @@ const initialTasks: DeskTask[] = [
     ],
     recommendations: {
       "C-455-2025-Principal-0": [
-        { id: "r-1", text: "Presentar PyP FEA", dueDate: "2025-12-13" },
-        { id: "r-2", text: "Subsanar observaciones del tribunal", dueDate: "2025-12-14" },
+        { id: "r-1", text: "Presentar PyP FEA", dueDate: "2025-12-13", assignee: "Jose H. - Abogado/a" },
+        { id: "r-2", text: "Subsanar observaciones del tribunal", dueDate: "2025-12-14", assignee: "Andrea S. - Ejecutivo/a" },
       ],
       "C-455-2025-Apremio-0": [
         { id: "r-3", text: "Solicitar notificación por el art. 44", dueDate: "2025-12-15" },
@@ -706,7 +723,7 @@ export function TasksView({
       {/* ─── Detail dialog ─── */}
       <Dialog open={Boolean(selectedTask)} onOpenChange={(open) => !open && handleClose()}>
         <DialogContent
-          className="max-w-5xl p-0 gap-0 overflow-hidden bg-[#f8f9fc]"
+          className="max-w-5xl w-[88vw] p-0 gap-0 overflow-hidden bg-[#f8f9fc]"
         >
           {selectedTask && (
             selectedTask.subtype === 'movimiento' && selectedTask.movementData ? (
@@ -798,7 +815,11 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
   const [tempReason, setTempReason] = useState("")
   const [isSummaryMode, setIsSummaryMode] = useState(false)
   const [correctedMovs, setCorrectedMovs] = useState<Record<string, MovementDetail>>({})
-  const [isCorrecting, setIsCorrecting] = useState(false)
+  const [showCorrectionModal, setShowCorrectionModal] = useState(false)
+  const [pendingCorrection, setPendingCorrection] = useState("")
+  const [correctionExplanation, setCorrectionExplanation] = useState("")
+  const [recComboOpen, setRecComboOpen] = useState(false)
+  const [recQuery, setRecQuery] = useState("")
 
   const movementData = task.movementData || []
   const currentCase = movementData[currentCaseIndex]
@@ -850,7 +871,22 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
     "Solicitar entorpecimiento",
     "Contestar demanda",
     "Objetar documentos",
+    "Coordinar ratificación",
+    "Contactar cliente",
+    "Cotizar notificación",
+    "Contactar archivero",
   ]
+
+  // Auto-assign responsable based on rec type:
+  // tasks starting with "Presentar", "Solicitar", "Contestar", "Objetar", or "Téngase" → Abogado
+  // contact/coordination tasks → Ejecutivo
+  const CONTACT_KEYWORDS = ["Contactar", "Coordinar", "Cotizar"]
+  const LAWYER_KEYWORDS = ["Presentar", "Solicitar", "Contestar", "Objetar", "Téngase"]
+  const getAssigneeForRec = (text: string): string => {
+    if (CONTACT_KEYWORDS.some((k) => text.startsWith(k))) return "Andrea S. - Ejecutivo/a"
+    if (LAWYER_KEYWORDS.some((k) => text.startsWith(k))) return "Jose H. - Abogado/a"
+    return ""
+  }
 
   /* ── Navigation ── */
   const handleNext = () => {
@@ -888,19 +924,31 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
       text: "",
       dueDate: new Date().toISOString().split("T")[0],
       type: "General",
+      assignee: "",
     }
     updateRecs([...currentRecs, newRec])
   }
 
   const handleEditRecClick = (rec: Recommendation) => {
-    setEditRec({ ...rec })
-    setTempReason(rec.reason || "")
-    setIsEditingRec(true)
+    if (editRec?.id === rec.id) {
+      // Toggle off
+      setEditRec(null)
+      setTempReason("")
+      setIsEditingRec(false)
+    } else {
+      setEditRec({ ...rec })
+      setTempReason(rec.reason || "")
+      setIsEditingRec(true)
+    }
   }
 
   const handleSaveRec = () => {
     if (!editRec) return
-    updateRecs(currentRecs.map((r) => r.id === editRec.id ? { ...editRec, reason: tempReason } : r))
+    const derivedAssignee = getAssigneeForRec(editRec.text)
+    updateRecs(currentRecs.map((r) => r.id === editRec.id
+      ? { ...editRec, reason: tempReason, assignee: derivedAssignee || editRec.assignee }
+      : r
+    ))
     setIsEditingRec(false)
     setEditRec(null)
     setTempReason("")
@@ -934,7 +982,6 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
       }
 
       updateRecs(newRecs)
-      setIsCorrecting(false)
     }
   }
 
@@ -993,18 +1040,14 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
   return (
     <div className="flex flex-col h-[85vh]">
       {/* ── Header ── */}
-      <div className="flex items-center justify-between px-6 py-4 bg-white border-b border-slate-200">
-        <div className="flex items-center gap-4">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
-            <FileText className="h-5 w-5" />
+      <div className="flex items-center justify-between px-6 py-3 bg-white border-b border-slate-200">
+        <div className="flex items-center gap-3">
+          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-50 text-blue-600">
+            <FileText className="h-4 w-4" />
           </div>
           <div>
-            <DialogTitle className="text-lg font-bold text-slate-800">{task.title}</DialogTitle>
-            <div className="flex items-center gap-2 text-sm text-slate-500">
-              <span className="font-medium text-slate-700">{task.clientName}</span>
-              <span>&bull;</span>
-              <span className="text-slate-400">Detectado {task.dueLabel}</span>
-            </div>
+            <DialogTitle className="text-base font-bold text-slate-800">{task.title}</DialogTitle>
+            <span className="text-sm font-medium text-slate-500">{task.clientName}</span>
           </div>
         </div>
         <Button
@@ -1018,36 +1061,35 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
             }
           }}
         >
-          Ir al radar <User className="ml-2 h-4 w-4" />
+          Abrir Radar <User className="ml-2 h-4 w-4" />
         </Button>
       </div>
 
-      {/* ── Case Selector + Notebook Tabs ── */}
-      <div className="flex flex-col gap-4 border-b border-slate-200 bg-white px-6 pb-0 pt-4">
-        <div className="flex items-center gap-4">
-          <Select
-            value={currentCaseIndex.toString()}
-            onValueChange={(v) => { setCurrentCaseIndex(parseInt(v)); setCurrentNotebookIndex(0); setCurrentMovementIndex(0) }}
-          >
-            <SelectTrigger className="w-[300px] border-slate-200 bg-slate-50/50 font-semibold text-slate-700">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              {movementData.map((c, idx) => {
-                const totalMovements = c.notebooks.reduce((sum, nb) => sum + nb.movements.length, 0)
-                const caseDone = isCaseDone(c)
-                return (
-                  <SelectItem key={c.caseId} value={idx.toString()}>
-                    Causa: {c.caseId} ({totalMovements}) {caseDone ? " ✓" : ""}
-                  </SelectItem>
-                )
-              })}
-            </SelectContent>
-          </Select>
-          <div className="flex-1" />
-          <div className="text-xs font-medium uppercase tracking-wider text-slate-400">Cuadernos de la causa</div>
-        </div>
-        <div className="flex gap-6 overflow-x-auto">
+      {/* ── Case Selector + Notebook Tabs (single row) ── */}
+      <div className="flex items-center gap-4 border-b border-slate-200 bg-white px-6 py-0 h-[52px]">
+        {/* Causa dropdown */}
+        <Select
+          value={currentCaseIndex.toString()}
+          onValueChange={(v) => { setCurrentCaseIndex(parseInt(v)); setCurrentNotebookIndex(0); setCurrentMovementIndex(0) }}
+        >
+          <SelectTrigger className="h-8 w-auto min-w-[180px] border-slate-200 bg-slate-50/50 text-sm font-semibold text-slate-700 shrink-0">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            {movementData.map((c, idx) => {
+              const totalMovements = c.notebooks.reduce((sum, nb) => sum + nb.movements.length, 0)
+              const caseDone = isCaseDone(c)
+              return (
+                <SelectItem key={c.caseId} value={idx.toString()}>
+                  Causa: {c.caseId} ({totalMovements}) {caseDone ? " ✓" : ""}
+                </SelectItem>
+              )
+            })}
+          </SelectContent>
+        </Select>
+
+        {/* Notebook tabs inline */}
+        <div className="flex h-full items-center gap-5 overflow-x-auto">
           {currentCase.notebooks.map((nb, idx) => {
             const isActive = idx === currentNotebookIndex
             const nbDone = isNotebookDone(currentCase.caseId, nb)
@@ -1056,7 +1098,7 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
                 key={nb.name}
                 onClick={() => { setCurrentNotebookIndex(idx); setCurrentMovementIndex(0) }}
                 className={cn(
-                  "flex items-center gap-2 border-b-2 pb-3 text-sm font-medium transition-all",
+                  "flex h-full items-center gap-2 border-b-2 text-sm font-medium transition-all",
                   isActive ? "border-[#262262] text-[#262262]" : "border-transparent text-slate-500 hover:text-slate-700",
                 )}
               >
@@ -1071,17 +1113,12 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
             )
           })}
         </div>
-      </div>
 
-      {/* ── Movement Navigator (only when >1 movements) ── */}
-      {currentMovements.length > 1 && (
-        <div className="flex items-center justify-between bg-[#f8f9fc] border-b border-slate-200 px-6 py-2.5">
-          <div className="flex items-center gap-2 text-sm">
-            <Bell className="h-4 w-4 text-[#262262]" />
-            <span className="font-bold text-slate-700">Movimiento {currentMovementIndex + 1}</span>
-            <span className="text-slate-400">de {currentMovements.length}</span>
-          </div>
-          <div className="flex items-center gap-1">
+        <div className="flex-1" />
+
+        {/* Movement pills inline (only when >1 movements) */}
+        {currentMovements.length > 1 && (
+          <div className="flex shrink-0 items-center gap-1">
             {currentMovements.map((_, idx) => {
               const movDone = isMovementDone(currentCase.caseId, currentNotebook.name, idx)
               return (
@@ -1094,7 +1131,7 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
                       ? "bg-green-50 text-green-600 border border-green-200"
                       : idx === currentMovementIndex
                         ? "bg-[#262262] text-white shadow-sm"
-                        : "bg-white text-slate-500 border border-slate-200 hover:border-[#262262]/30 hover:text-[#262262]",
+                        : "bg-slate-100 text-slate-500 border border-slate-200 hover:border-[#262262]/30 hover:text-[#262262]",
                   )}
                 >
                   {movDone && idx !== currentMovementIndex ? <CheckCircle2 className="h-3 w-3" /> : idx + 1}
@@ -1102,77 +1139,137 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
               )
             })}
           </div>
-        </div>
-      )}
+        )}
+      </div>
+
+      {/* ── Correction Modal ── */}
+      <Dialog open={showCorrectionModal} onOpenChange={(open) => {
+        setShowCorrectionModal(open)
+        if (!open) { setPendingCorrection(""); setCorrectionExplanation("") }
+      }}>
+        <DialogContent className="max-w-lg gap-0 p-0 overflow-hidden">
+          {/* Header */}
+          <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+            <DialogTitle className="text-base font-bold text-slate-800">
+              Reportar movimiento incorrecto
+            </DialogTitle>
+          </div>
+
+          {/* Body */}
+          <div className="space-y-5 px-6 py-5">
+            {/* Movimiento correcto */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">
+                Seleccionar movimiento correcto
+              </label>
+              <Select value={pendingCorrection} onValueChange={setPendingCorrection}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder="Seleccionar..." />
+                </SelectTrigger>
+                <SelectContent>
+                  {ALTERNATIVE_MOVEMENTS.map((m) => (
+                    <SelectItem key={m.name} value={m.name}>
+                      {m.name} <span className="text-slate-400">({m.movementType})</span>
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {/* Explicación obligatoria */}
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-slate-700">
+                Motivos del reporte
+                <span className="ml-1 text-red-500">*</span>
+              </label>
+              <textarea
+                value={correctionExplanation}
+                onChange={(e) => setCorrectionExplanation(e.target.value)}
+                placeholder="Debe explicar por qué el movimiento detectado es incorrecto..."
+                rows={4}
+                className="w-full resize-none rounded-lg border border-slate-200 bg-slate-50 px-3 py-2.5 text-sm text-slate-700 placeholder:text-slate-400 focus:border-[#262262]/40 focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#262262]/10"
+              />
+            </div>
+          </div>
+
+          {/* Footer */}
+          <div className="flex justify-end gap-3 border-t border-slate-100 bg-slate-50/60 px-6 py-4">
+            <Button
+              variant="ghost"
+              onClick={() => { setShowCorrectionModal(false); setPendingCorrection(""); setCorrectionExplanation("") }}
+            >
+              Cancelar
+            </Button>
+            <Button
+              className="bg-[#262262] hover:bg-[#1d1a4d]"
+              disabled={!pendingCorrection || !correctionExplanation.trim()}
+              onClick={() => {
+                handleCorrectMovement(pendingCorrection)
+                setShowCorrectionModal(false)
+                setPendingCorrection("")
+                setCorrectionExplanation("")
+              }}
+            >
+              Confirmar
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
 
       {/* ── Scrollable Content (single column) ── */}
-      <div className="flex-1 overflow-y-auto bg-[#f8f9fc] p-6">
-        <div className="mx-auto max-w-4xl space-y-6">
+      <div className="flex-1 overflow-y-auto bg-[#f8f9fc] p-8">
+        <div className="mx-auto max-w-5xl space-y-6">
 
           {/* Movement Details Card */}
           <div className="overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm">
-            <div className="flex items-center justify-between border-b border-slate-100 px-5 py-4">
-              <div className="flex items-center gap-2">
-                <h4 className="font-bold text-slate-800">{activeMovement.name}</h4>
-                <Badge variant={activeMovement.movementType === "resolucion" ? "default" : "secondary"} className="text-[10px] uppercase">
-                  {activeMovement.movementType}
-                </Badge>
+            {/* Card header: title + badge + report button */}
+            <div className="flex items-start justify-between border-b border-slate-100 px-5 py-4">
+              <div>
+                <div className="flex items-center gap-2">
+                  <h4 className="text-lg font-bold text-slate-800">{activeMovement.name}</h4>
+                  <Badge variant={activeMovement.movementType === "resolucion" ? "default" : "secondary"} className="text-[10px] uppercase">
+                    {activeMovement.movementType}
+                  </Badge>
+                </div>
+                <span className="mt-0.5 block text-sm text-slate-400">{activeMovement.date}</span>
               </div>
-              <span className="text-xs text-slate-400">{activeMovement.date}</span>
+              {/* Reportar incorrecto */}
+              <button
+                onClick={() => { setPendingCorrection(activeMovement.name); setShowCorrectionModal(true) }}
+                className="flex items-center gap-1.5 rounded-lg border border-slate-200 bg-white px-3 py-1.5 text-xs font-medium text-slate-500 transition-colors hover:border-red-200 hover:bg-red-50 hover:text-red-600"
+              >
+                <AlertTriangle className="h-3.5 w-3.5" />
+                Reportar incorrecto
+              </button>
             </div>
 
-            {/* Correction UI */}
-            {isCorrecting ? (
-              <div className="bg-amber-50 px-5 py-3 border-b border-amber-100 animate-in slide-in-from-top-2">
-                <div className="flex items-center gap-3">
-                  <AlertTriangle className="h-4 w-4 text-amber-600" />
-                  <span className="text-xs font-bold text-amber-700 uppercase tracking-wide">Seleccionar movimiento correcto:</span>
-                  <Select
-                    onValueChange={handleCorrectMovement}
-                    defaultValue={activeMovement.name}
-                  >
-                    <SelectTrigger className="h-8 bg-white border-amber-200 text-xs font-medium w-[250px]">
-                      <SelectValue placeholder="Seleccionar..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {ALTERNATIVE_MOVEMENTS.map((m) => (
-                        <SelectItem key={m.name} value={m.name} className="text-xs">
-                          {m.name} ({m.movementType})
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                  <Button size="sm" variant="ghost" className="h-7 text-amber-700 hover:bg-amber-100" onClick={() => setIsCorrecting(false)}>
-                    Cancelar
-                  </Button>
-                </div>
-              </div>
-            ) : (
-              <div className="bg-slate-50/50 px-5 py-2 border-b border-slate-100 flex justify-end">
-                <button
-                  onClick={() => setIsCorrecting(true)}
-                  className="text-[10px] font-bold text-slate-400 hover:text-red-500 uppercase tracking-wider transition-colors flex items-center gap-1"
-                >
-                  Reportar incorrecto <AlertTriangle className="h-3 w-3" />
-                </button>
-              </div>
-            )}
 
-            <div className="p-5">
-              <div className="mb-4 rounded-lg border border-blue-100 bg-blue-50/50 p-4">
-                <p className="text-sm font-medium leading-relaxed text-slate-700">
+            <div className="p-6">
+              <div className="mb-5 rounded-lg border border-blue-100 bg-blue-50/50 p-5">
+                <p className="text-base font-medium leading-relaxed text-slate-700">
                   &ldquo;{activeMovement.summary}&rdquo;
                 </p>
               </div>
-              <div className="grid grid-cols-2 gap-4 text-sm text-slate-600">
-                <div>
-                  <span className="mb-1 block text-xs uppercase text-slate-400">Tribunal</span>
-                  {activeMovement.court}
+              <div className="flex items-end justify-between">
+                <div className="grid grid-cols-2 gap-x-16 gap-y-1 text-sm text-slate-600">
+                  <div>
+                    <span className="mb-0.5 block text-xs uppercase text-slate-400">Tribunal</span>
+                    <span className="text-sm font-medium">{activeMovement.court}</span>
+                  </div>
+                  <div>
+                    <span className="mb-0.5 block text-xs uppercase text-slate-400">Acreedor</span>
+                    <span className="text-sm font-medium">{activeMovement.creditor}</span>
+                  </div>
                 </div>
-                <div>
-                  <span className="mb-1 block text-xs uppercase text-slate-400">Acreedor</span>
-                  {activeMovement.creditor}
-                </div>
+                {/* Ver documento */}
+                <a
+                  href="#"
+                  onClick={(e) => e.preventDefault()}
+                  className="flex items-center gap-1.5 text-sm font-semibold text-[#262262] underline-offset-2 hover:underline"
+                >
+                  Ver documento
+                  <ExternalLink className="h-3.5 w-3.5" />
+                </a>
               </div>
             </div>
           </div>
@@ -1188,90 +1285,106 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
                 <Plus className="mr-1 h-4 w-4" /> Agregar
               </Button>
             </div>
-            <div className="space-y-3">
-              {currentRecs.length === 0 && (
+
+            <div className="overflow-hidden rounded-xl border border-slate-200 bg-white">
+              {currentRecs.length === 0 ? (
                 <div className="rounded-xl border border-dashed border-slate-200 bg-slate-50/50 py-8 text-center">
                   <p className="text-sm font-medium text-slate-400">No se asignan tareas al movimiento</p>
                 </div>
-              )}
-              {currentRecs.map((rec) => {
-                const isLocked = rec.accepted
-                return (
-                  <div
-                    key={rec.id}
-                    className={cn(
-                      "rounded-xl border bg-white p-4 transition-all hover:shadow-md",
-                      isLocked ? "border-green-200 bg-green-50/30" : "border-slate-200",
-                    )}
-                  >
-                    <div className="flex items-start justify-between gap-4">
-                      <div className="flex-1">
-                        <div className="mb-1 flex items-center gap-2">
-                          <div className={cn(
-                            "inline-flex items-center gap-1.5 rounded-lg border px-2.5 py-1 text-xs font-medium transition-all",
+              ) : (
+                <div className="grid grid-cols-[160px_minmax(180px,320px)_1fr_160px]">
+                  {/* Header cells */}
+                  <div className="border-b border-slate-100 bg-slate-50 px-4 py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Fecha</span>
+                  </div>
+                  <div className="border-b border-slate-100 bg-slate-50 px-4 py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Recomendación</span>
+                  </div>
+                  <div className="border-b border-slate-100 bg-slate-50 px-4 py-2">
+                    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">Responsable</span>
+                  </div>
+                  <div className="border-b border-slate-100 bg-slate-50 px-4 py-2" />
+
+                  {/* Data rows — each rec contributes 4 consecutive cells */}
+                  {currentRecs.map((rec, recIdx) => {
+                    const isLocked = rec.accepted
+                    const rowBg = cn(isLocked ? "bg-green-50/30" : "hover:bg-slate-50/60")
+                    const borderTop = recIdx > 0 ? "border-t border-slate-100" : ""
+                    return (
+                      <>
+                        {/* Fecha */}
+                        <div key={`${rec.id}-date`} className={cn("flex items-center px-4 py-3", rowBg, borderTop)}>
+                          <label className={cn(
+                            "relative inline-flex w-full items-center gap-1.5 rounded-lg border px-2.5 py-1.5 text-sm font-medium overflow-hidden",
                             isLocked
-                              ? "border-transparent bg-slate-50 text-slate-400"
-                              : "border-slate-200 bg-slate-50 text-slate-600 hover:border-[#262262]/30 hover:bg-[#262262]/5 cursor-pointer",
+                              ? "border-transparent bg-transparent text-slate-500 cursor-default"
+                              : "border-slate-200 bg-white text-slate-700 hover:border-[#262262]/30 cursor-pointer",
                           )}>
-                            <CalendarDays className="h-3.5 w-3.5 text-[#262262]/60" />
+                            <CalendarDays className="h-3.5 w-3.5 shrink-0 text-[#262262]/50" />
                             <input
                               type="date"
                               className={cn(
-                                "border-none bg-transparent text-xs font-medium text-slate-600 outline-none cursor-pointer",
-                                isLocked && "pointer-events-none text-slate-400 cursor-default",
+                                "w-full border-none bg-transparent text-sm font-medium text-slate-700 outline-none [&::-webkit-calendar-picker-indicator]:absolute [&::-webkit-calendar-picker-indicator]:inset-0 [&::-webkit-calendar-picker-indicator]:opacity-0 [&::-webkit-calendar-picker-indicator]:cursor-pointer [&::-webkit-calendar-picker-indicator]:w-full",
+                                isLocked && "pointer-events-none text-slate-500",
                               )}
                               value={rec.dueDate}
                               onChange={(e) => handleDateChange(rec.id, e.target.value)}
                               disabled={isLocked}
                             />
-                          </div>
+                          </label>
                         </div>
-                        <p className={cn("text-sm font-medium", isLocked ? "text-green-800" : "text-slate-800")}>
-                          {rec.text || "Seleccionar acción..."}
-                        </p>
-                        {rec.reason && (
-                          <p className="mt-1 text-xs italic text-slate-400">Motivo: {rec.reason}</p>
-                        )}
-                      </div>
-                      <div className="flex items-center gap-1">
-                        {isLocked ? (
-                          <>
-                            <Badge className="gap-1 border-none bg-green-100 text-green-700 hover:bg-green-100">
-                              <CheckCircle2 className="h-3 w-3" /> Aceptado
-                            </Badge>
-                            <Button
-                              size="icon"
-                              variant="ghost"
-                              className="h-8 w-8 text-slate-300 hover:text-slate-500"
-                              onClick={() => handleToggleAcceptRec(rec)}
-                              title="Desbloquear"
-                            >
-                              <Unlock className="h-3.5 w-3.5" />
-                            </Button>
-                          </>
-                        ) : (
-                          <>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-[#262262]" onClick={() => handleEditRecClick(rec)}>
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => handleDeleteRec(rec.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                            <Button
-                              size="sm"
-                              className="h-8 bg-[#262262] text-xs"
-                              onClick={() => handleToggleAcceptRec(rec)}
-                              disabled={!rec.text}
-                            >
-                              Aceptar
-                            </Button>
-                          </>
-                        )}
-                      </div>
-                    </div>
-                  </div>
-                )
-              })}
+
+                        {/* Recomendación */}
+                        <div key={`${rec.id}-text`} className={cn("flex flex-col justify-center gap-0.5 px-4 py-3", rowBg, borderTop)}>
+                          <p className={cn("text-sm font-semibold truncate", isLocked ? "text-green-800" : "text-slate-800")}>
+                            {rec.text || <span className="font-normal italic text-slate-400">Sin acción seleccionada</span>}
+                          </p>
+                          {rec.reason && (
+                            <p className="flex items-start gap-1 text-xs text-slate-400">
+                              <span className="shrink-0 font-medium not-italic text-slate-500">Motivo:</span>
+                              <span className="italic truncate">{rec.reason}</span>
+                            </p>
+                          )}
+                        </div>
+
+                        {/* Responsable */}
+                        <div key={`${rec.id}-assignee`} className={cn("flex items-center px-4 py-3", rowBg, borderTop)}>
+                          <span className={cn("truncate text-sm", rec.assignee ? "text-slate-700 font-medium" : "italic text-slate-400")}>
+                            {rec.assignee || "Sin responsable"}
+                          </span>
+                        </div>
+
+                        {/* Actions */}
+                        <div key={`${rec.id}-actions`} className={cn("flex items-center justify-end gap-1 px-4 py-3", rowBg, borderTop)}>
+                          {isLocked ? (
+                            <>
+                              <Badge className="gap-1 border-none bg-green-100 text-green-700 hover:bg-green-100">
+                                <CheckCircle2 className="h-3 w-3" /> Aceptado
+                              </Badge>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-300 hover:text-slate-500" onClick={() => handleToggleAcceptRec(rec)} title="Desbloquear">
+                                <Unlock className="h-3.5 w-3.5" />
+                              </Button>
+                            </>
+                          ) : (
+                            <>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-[#262262]" onClick={() => handleEditRecClick(rec)}>
+                                <Edit2 className="h-4 w-4" />
+                              </Button>
+                              <Button size="icon" variant="ghost" className="h-8 w-8 text-slate-400 hover:text-red-600" onClick={() => handleDeleteRec(rec.id)}>
+                                <Trash2 className="h-4 w-4" />
+                              </Button>
+                              <Button size="sm" className="h-8 bg-[#262262] text-xs" onClick={() => handleToggleAcceptRec(rec)} disabled={!rec.text}>
+                                Aceptar
+                              </Button>
+                            </>
+                          )}
+                        </div>
+
+                      </>
+                    )
+                  })}
+                </div>
+              )}
             </div>
           </div>
 
@@ -1361,12 +1474,80 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
             <div className="space-y-5 p-6">
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-700">Seleccionar nueva acción</Label>
-                <Select value={editRec.text} onValueChange={(v) => setEditRec({ ...editRec, text: v })}>
-                  <SelectTrigger className="h-11"><SelectValue placeholder="Buscar o seleccionar acción..." /></SelectTrigger>
-                  <SelectContent>
-                    {recOptions.map((opt) => (<SelectItem key={opt} value={opt}>{opt}</SelectItem>))}
-                  </SelectContent>
-                </Select>
+                <Popover open={recComboOpen} onOpenChange={setRecComboOpen}>
+                  <PopoverTrigger asChild>
+                    <button
+                      className={cn(
+                        "flex h-11 w-full items-center justify-between rounded-md border border-slate-200 bg-white px-3 py-2 text-sm text-left outline-none",
+                        "hover:border-slate-300 focus:border-[#262262]/40 focus:ring-2 focus:ring-[#262262]/10",
+                        !editRec.text && "text-slate-400",
+                      )}
+                    >
+                      {editRec.text ? (
+                        <span className="flex items-center gap-1.5">
+                          {editRec.text}
+                          {getAssigneeForRec(editRec.text) && (
+                            <span className="text-slate-400 font-normal">— {getAssigneeForRec(editRec.text)}</span>
+                          )}
+                        </span>
+                      ) : (
+                        "Buscar o seleccionar acción..."
+                      )}
+                      <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 text-slate-400" />
+                    </button>
+                  </PopoverTrigger>
+                  <PopoverContent className="w-[420px] p-0 shadow-md" align="start">
+                    <div>
+                      <div className="flex items-center border-b border-slate-100 px-3">
+                        <Search className="mr-2 h-4 w-4 shrink-0 text-slate-400" />
+                        <input
+                          autoFocus
+                          className="flex h-11 w-full bg-transparent py-3 text-sm outline-none placeholder:text-slate-400"
+                          placeholder="Buscar acción..."
+                          value={recQuery}
+                          onChange={(e) => setRecQuery(e.target.value)}
+                        />
+                      </div>
+                      <div
+                        className="max-h-[260px] overflow-y-scroll overscroll-contain p-1"
+                        style={{ scrollbarGutter: "stable" }}
+                        onWheel={(e) => {
+                          e.stopPropagation()
+                          e.currentTarget.scrollTop += e.deltaY
+                        }}
+                      >
+                        {recOptions.filter((o) => o.toLowerCase().includes(recQuery.toLowerCase())).length === 0 && (
+                          <div className="py-6 text-center text-sm text-slate-400">Sin resultados.</div>
+                        )}
+                        {recOptions
+                          .filter((o) => o.toLowerCase().includes(recQuery.toLowerCase()))
+                          .map((opt) => {
+                            const assignee = getAssigneeForRec(opt)
+                            const isSelected = editRec.text === opt
+                            return (
+                              <button
+                                key={opt}
+                                type="button"
+                                className={cn(
+                                  "flex w-full items-center rounded-sm px-2 py-1.5 text-sm text-left",
+                                  isSelected ? "bg-slate-100 font-medium" : "hover:bg-slate-50",
+                                )}
+                                onClick={() => {
+                                  setEditRec({ ...editRec, text: opt, assignee: getAssigneeForRec(opt) || editRec.assignee })
+                                  setRecComboOpen(false)
+                                  setRecQuery("")
+                                }}
+                              >
+                                <Check className={cn("mr-2 h-4 w-4 shrink-0 text-[#262262]", isSelected ? "opacity-100" : "opacity-0")} />
+                                <span>{opt}</span>
+                                {assignee && <span className="ml-1.5 text-slate-400 font-normal">— {assignee}</span>}
+                              </button>
+                            )
+                          })}
+                      </div>
+                    </div>
+                  </PopoverContent>
+                </Popover>
               </div>
               <div className="space-y-2">
                 <Label className="text-sm font-bold text-slate-700">Motivos del cambio <span className="text-red-500">*</span></Label>
@@ -1377,6 +1558,11 @@ function TaskProcessModal({ task, onClose, onUpdate, onOpenClient }: { task: Des
                   className="min-h-[100px] resize-none"
                 />
               </div>
+            </div>
+            <div className="border-t border-slate-100 px-6 py-3">
+              <p className="text-xs text-slate-400">
+                Recuerda <span className="font-medium text-slate-500">aceptar la recomendación</span> una vez guardada para que se cree la tarea correspondiente.
+              </p>
             </div>
             <div className="flex justify-end gap-3 bg-slate-50 px-6 py-5">
               <Button variant="outline" onClick={() => setIsEditingRec(false)}>Cancelar</Button>

@@ -48,6 +48,8 @@ export interface Notebook {
 
 export interface JudicialData {
   currentStage: number
+  stageDates?: Record<number, string>
+  debtAmount?: number
   nextAction: string
   deadline: string | null
   description: string
@@ -72,6 +74,7 @@ export interface ContractData {
   icon: string
   detail: string
   currentStage: number
+  stageDates?: Record<number, string>
   nextAction: string
   deadline: string | null
   strategy: string
@@ -79,6 +82,7 @@ export interface ContractData {
   contractNotes: string
   tasks: Task[]
   history: Record<number, HistoryEvent[]>
+  documents?: { name: string; received: boolean }[]
 }
 
 export interface ProtectionData {
@@ -92,10 +96,18 @@ export interface CaseEntry {
   active: boolean
 }
 
+export interface ComercialStatus {
+  cuotasPagadas: number
+  cuotasTotal: number
+  alDia: boolean
+}
+
 export interface Client {
   id: number
   name: string
   initials: string
+  rut: string
+  claveUnica: string
   email: string
   cases: CaseEntry[]
   activeCaseId: string
@@ -104,6 +116,7 @@ export interface Client {
   healthScore: number
   mood: string
   clientNotes: string
+  comercialStatus: ComercialStatus
   judicialData: JudicialData
   protectionData: ProtectionData
 }
@@ -120,6 +133,8 @@ export const CLIENTS_DATA: Client[] = [
     id: 1,
     name: "Esteban Morales Cerda",
     initials: "EM",
+    rut: "12.345.678-9",
+    claveUnica: "Esteban2025!",
     email: "esteban.morales@correo.cl",
     cases: [
       { id: "C-455-2025", creditor: "Scotiabank", active: true },
@@ -132,8 +147,11 @@ export const CLIENTS_DATA: Client[] = [
     mood: "ansioso",
     clientNotes:
       "Cliente muy ansioso, llamar solo en las tardes. Prefiere contacto por correo y WhatsApp.",
+    comercialStatus: { cuotasPagadas: 3, cuotasTotal: 24, alDia: false },
     judicialData: {
       currentStage: 3,
+      stageDates: { 1: "10/11/2025", 2: "15/11/2025", 3: "19/11/2025" },
+      debtAmount: 3500000,
       nextAction: "Acreditar PyP con FEA",
       deadline: "3 dias",
       description:
@@ -327,6 +345,7 @@ export const CLIENTS_DATA: Client[] = [
           icon: "home",
           detail: "Parcela Lampa",
           currentStage: 3,
+          stageDates: { 1: "03/12/2025", 2: "09/12/2025", 3: "13/12/2025" },
           nextAction: "Coordinar firma escritura",
           deadline: "Viernes",
           strategy: "Separacion de Bienes + Venta",
@@ -440,6 +459,12 @@ export const CLIENTS_DATA: Client[] = [
               },
             ],
           },
+          documents: [
+            { name: "Dominio Vigente con copia", received: true },
+            { name: "Hipotecas y Gravámenes", received: true },
+            { name: "Avaúo Fiscal", received: true },
+            { name: "No deuda TGR", received: true },
+          ],
         },
         {
           id: "CTR-002",
@@ -447,6 +472,7 @@ export const CLIENTS_DATA: Client[] = [
           icon: "car",
           detail: "Mazda 3 2020",
           currentStage: 1,
+          stageDates: { 1: "20/11/2025" },
           nextAction: "Obtener CAV y Multas",
           deadline: null,
           strategy: "Traspaso a tercero",
@@ -463,6 +489,11 @@ export const CLIENTS_DATA: Client[] = [
             },
           ],
           history: {},
+          documents: [
+            { name: "Permiso de Circulación al día", received: false },
+            { name: "Anotaciones Vigentes", received: false },
+            { name: "SOAP", received: false },
+          ],
         },
       ],
     },
@@ -471,6 +502,8 @@ export const CLIENTS_DATA: Client[] = [
     id: 2,
     name: "Maria Fernanda Gonzalez",
     initials: "MF",
+    rut: "13.456.789-0",
+    claveUnica: "Maria2024#",
     email: "maria.gonzalez@correo.cl",
     cases: [{ id: "C-498-2025", creditor: "Falabella", active: true }],
     activeCaseId: "C-498-2025",
@@ -479,8 +512,11 @@ export const CLIENTS_DATA: Client[] = [
     healthScore: 92,
     mood: "tranquilo",
     clientNotes: "Cliente tranquilo.",
+    comercialStatus: { cuotasPagadas: 18, cuotasTotal: 24, alDia: true },
     judicialData: {
       currentStage: 3,
+      stageDates: { 1: "01/10/2025", 2: "15/10/2025", 3: "01/11/2025" },
+      debtAmount: 1200000,
       nextAction: "Esperando resolucion",
       deadline: null,
       description: "Demanda por incumplimiento de pagare.",
@@ -517,6 +553,8 @@ export const CLIENTS_DATA: Client[] = [
     id: 3,
     name: "Ricardo Paredes Mella",
     initials: "RP",
+    rut: "10.987.654-3",
+    claveUnica: "Ricardo@456",
     email: "ricardo.paredes@correo.cl",
     cases: [{ id: "C-712-2025", creditor: "Banco de Chile", active: true }],
     activeCaseId: "C-712-2025",
@@ -525,8 +563,11 @@ export const CLIENTS_DATA: Client[] = [
     healthScore: 68,
     mood: "inquieto",
     clientNotes: "Prefiere contacto por correo y reunion semanal.",
+    comercialStatus: { cuotasPagadas: 7, cuotasTotal: 36, alDia: false },
     judicialData: {
       currentStage: 2,
+      stageDates: { 1: "25/11/2025", 2: "08/12/2025" },
+      debtAmount: 8900000,
       nextAction: "Preparar escrito de excepciones",
       deadline: "2 dias",
       description: "Demanda ejecutiva por deuda comercial.",
@@ -574,6 +615,7 @@ export const CLIENTS_DATA: Client[] = [
           icon: "home",
           detail: "Depto Nunoa",
           currentStage: 2,
+          stageDates: { 1: "02/12/2025", 2: "10/12/2025" },
           nextAction: "Enviar borrador para revision interna",
           deadline: "Jueves",
           strategy: "Venta a tercero relacionado",
@@ -622,6 +664,8 @@ export const CLIENTS_DATA: Client[] = [
     id: 4,
     name: "Paula Arriagada Soto",
     initials: "PA",
+    rut: "15.234.567-8",
+    claveUnica: "Paula789$",
     email: "paula.arriagada@correo.cl",
     cases: [{ id: "C-901-2024", creditor: "Santander", active: true }],
     activeCaseId: "C-901-2024",
@@ -630,8 +674,11 @@ export const CLIENTS_DATA: Client[] = [
     healthScore: 88,
     mood: "tranquila",
     clientNotes: "Cliente ordenada, envia documentos el mismo dia.",
+    comercialStatus: { cuotasPagadas: 20, cuotasTotal: 24, alDia: true },
     judicialData: {
       currentStage: 4,
+      stageDates: { 1: "01/08/2025", 2: "20/08/2025", 3: "10/09/2025", 4: "01/10/2025" },
+      debtAmount: 15000000,
       nextAction: "Esperar resolucion probatoria",
       deadline: null,
       description: "Proceso en termino probatorio con defensa consolidada.",
@@ -654,6 +701,7 @@ export const CLIENTS_DATA: Client[] = [
           icon: "home",
           detail: "Casa Talca",
           currentStage: 5,
+          stageDates: { 1: "01/09/2025", 2: "12/09/2025", 3: "20/09/2025", 4: "05/10/2025", 5: "01/11/2025" },
           nextAction: "Contrato finalizado",
           deadline: null,
           strategy: "Separacion de bienes y venta",
@@ -682,6 +730,8 @@ export const CLIENTS_DATA: Client[] = [
     id: 5,
     name: "Nicolas Quintana Vera",
     initials: "NQ",
+    rut: "16.543.210-1",
+    claveUnica: "Nico2025*",
     email: "nicolas.quintana@correo.cl",
     cases: [{ id: "C-333-2025", creditor: "Itau", active: true }],
     activeCaseId: "C-333-2025",
@@ -690,8 +740,11 @@ export const CLIENTS_DATA: Client[] = [
     healthScore: 41,
     mood: "estresado",
     clientNotes: "Cliente solicita reportes cortos por WhatsApp.",
+    comercialStatus: { cuotasPagadas: 1, cuotasTotal: 18, alDia: false },
     judicialData: {
       currentStage: 3,
+      stageDates: { 1: "05/12/2025", 2: "18/12/2025", 3: "02/01/2026" },
+      debtAmount: 4750000,
       nextAction: "Acreditar personeria",
       deadline: "Hoy",
       description: "Causa en admisibilidad con apercibimiento del tribunal.",
@@ -722,6 +775,8 @@ export const CLIENTS_DATA: Client[] = [
     id: 6,
     name: "Claudia Sepulveda Rios",
     initials: "CR",
+    rut: "14.678.901-2",
+    claveUnica: "Claudia#321",
     email: "claudia.sepulveda@correo.cl",
     cases: [{ id: "C-620-2025", creditor: "BCI", active: true }],
     activeCaseId: "C-620-2025",
@@ -730,8 +785,11 @@ export const CLIENTS_DATA: Client[] = [
     healthScore: 63,
     mood: "expectante",
     clientNotes: "Prefiere llamadas en horario de tarde.",
+    comercialStatus: { cuotasPagadas: 12, cuotasTotal: 36, alDia: true },
     judicialData: {
       currentStage: 1,
+      stageDates: { 1: "10/01/2026" },
+      debtAmount: 2200000,
       nextAction: "Recoleccion de antecedentes",
       deadline: null,
       description: "Ingreso de carpeta para estrategia inicial.",
@@ -754,6 +812,7 @@ export const CLIENTS_DATA: Client[] = [
           icon: "car",
           detail: "Patente KDJS.56",
           currentStage: 3,
+          stageDates: { 1: "05/12/2025", 2: "10/12/2025", 3: "14/12/2025" },
           nextAction: "Coordinar firma en notaria",
           deadline: "Viernes",
           strategy: "Transferencia a tercero",

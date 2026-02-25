@@ -24,20 +24,54 @@ const colorThemes = {
   },
 }
 
+function parseDate(dateStr: string): Date {
+  const [day, month, year] = dateStr.split("/").map(Number)
+  return new Date(year, month - 1, day)
+}
+
+function daysBetween(startStr: string, endDate: Date): number {
+  const start = parseDate(startStr)
+  const diffMs = endDate.getTime() - start.getTime()
+  return Math.max(0, Math.floor(diffMs / (1000 * 60 * 60 * 24)))
+}
+
 export function JourneyMap({
   stages,
   currentStage,
   selectedStageId,
   onSelectStage,
   themeColor = "indigo",
+  stageDates,
 }: {
   stages: Stage[]
   currentStage: number
   selectedStageId: number | null
   onSelectStage: (id: number) => void
   themeColor?: "indigo" | "emerald"
+  stageDates?: Record<number, string>
 }) {
   const theme = colorThemes[themeColor]
+  const today = new Date()
+
+  const getDaysLabel = (stageId: number): string | null => {
+    if (!stageDates || !stageDates[stageId]) return null
+
+    if (stageId < currentStage) {
+      // Etapa completada: días entre inicio de esta etapa e inicio de la siguiente
+      const nextStageDate = stageDates[stageId + 1]
+      if (!nextStageDate) return null
+      const days = daysBetween(stageDates[stageId], parseDate(nextStageDate))
+      return `${days} día${days !== 1 ? "s" : ""}`
+    }
+
+    if (stageId === currentStage) {
+      // Etapa actual: días desde el inicio hasta hoy
+      const days = daysBetween(stageDates[stageId], today)
+      return `${days} día${days !== 1 ? "s" : ""}`
+    }
+
+    return null
+  }
 
   return (
     <div className="relative w-full py-10 px-8">
@@ -59,6 +93,7 @@ export function JourneyMap({
           const isCurrent = stage.id === currentStage
           const isFuture = stage.id > currentStage
           const isSelected = stage.id === selectedStageId
+          const daysLabel = getDaysLabel(stage.id)
 
           return (
             <button
@@ -78,11 +113,11 @@ export function JourneyMap({
                 {isPast && <span className="text-sm font-bold">{stage.id}</span>}
                 {isCurrent && <CheckCircle2 size={24} className="animate-in zoom-in spin-in-90 duration-300" />}
                 {isFuture && <span className="hidden">{stage.id}</span>}
-                
+
                 {isSelected && !isCurrent && (
-                   <div className={`absolute -bottom-2 ${theme.text} transform translate-y-full`}>
-                      <ChevronDown size={20} />
-                   </div>
+                  <div className={`absolute -bottom-2 ${theme.text} transform translate-y-full`}>
+                    <ChevronDown size={20} />
+                  </div>
                 )}
               </div>
               <div
@@ -93,6 +128,15 @@ export function JourneyMap({
               >
                 {stage.label}
               </div>
+              {daysLabel && (
+                <div
+                  className={`mt-0.5 text-[10px] font-medium leading-none
+                    ${isCurrent ? theme.text : "text-slate-400"}
+                  `}
+                >
+                  {daysLabel}
+                </div>
+              )}
             </button>
           )
         })}
