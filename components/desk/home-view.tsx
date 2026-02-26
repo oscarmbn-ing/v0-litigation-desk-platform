@@ -43,8 +43,8 @@ export function HomeView({
                 {/* Header Section */}
                 <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 bg-white p-6 rounded-2xl border border-slate-200/60 shadow-sm">
                     <div>
-                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Buenas tardes, José</h1>
-                        <p className="text-slate-500 text-sm mt-1">Lunes, 12 de Octubre <span className="mx-2">•</span> Tienes 3 audiencias hoy</p>
+                        <h1 className="text-2xl font-bold text-slate-900 tracking-tight">{new Date().getHours() < 12 ? "Buenos días" : new Date().getHours() < 19 ? "Buenas tardes" : "Buenas noches"}, José</h1>
+                        <p className="text-slate-500 text-sm mt-1">{(() => { const d = new Date().toLocaleDateString("es-CL", { weekday: "long", day: "numeric", month: "long" }); return d.charAt(0).toUpperCase() + d.slice(1) })()} <span className="mx-2">•</span> Tienes 3 ratificaciones hoy</p>
                     </div>
                     {/* Gamification / Streak Badge - Simplified */}
                     <div className="bg-slate-50 text-slate-700 px-4 py-2 rounded-xl border border-slate-200 flex items-center gap-3">

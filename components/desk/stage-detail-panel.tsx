@@ -11,7 +11,6 @@ import {
   Gavel,
   Eye,
   Hammer,
-  Book,
   FolderOpen,
   AlertTriangle,
   Mail,
@@ -47,6 +46,7 @@ export function StageDetailPanel({
   stages,
   activeNotebook,
   onNotebookChange,
+  inline = false,
 }: {
   stageId: number
   judicialData: JudicialData
@@ -54,6 +54,7 @@ export function StageDetailPanel({
   stages: Stage[]
   activeNotebook: "principal" | "apremio" | "terceria"
   onNotebookChange: (nb: "principal" | "apremio" | "terceria") => void
+  inline?: boolean
 }) {
   let history: HistoryEvent[] = []
   let notebookStatus = ""
@@ -80,20 +81,19 @@ export function StageDetailPanel({
 
   const stageInfo = stages.find((s) => s.id === stageId)
 
-  return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <CardContent className="p-0">
-        {/* Header con título y tabs */}
-        <div className="p-6 pb-4">
-          <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-            <div>
-              <h3 className="font-bold text-slate-900 text-xl">
-                Bitácora: {stageInfo?.label}
-              </h3>
-              <p className="text-sm text-slate-500">
-                Historial de eventos
-              </p>
-            </div>
+  const content = (
+    <>
+      {/* Header con título y tabs */}
+      <div className={inline ? "px-6 pt-6 pb-4" : "px-6 pt-6 pb-4"}>
+        <div className="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+          <div>
+            <h3 className="font-bold text-slate-900 text-xl">
+              Bitácora: {stageInfo?.label}
+            </h3>
+            <p className="text-sm text-slate-500">
+              Historial de eventos
+            </p>
+          </div>
             
             {/* Notebook tabs */}
             <div className="flex bg-slate-100 p-1 rounded-lg">
@@ -106,7 +106,7 @@ export function StageDetailPanel({
                     : "text-slate-500 hover:text-slate-700 hover:bg-slate-200"
                 }`}
               >
-                <Book size={16} /> C. Principal
+                C. Principal
               </button>
               <button
                 type="button"
@@ -134,13 +134,13 @@ export function StageDetailPanel({
           </div>
         </div>
 
-        {/* Timeline de eventos */}
+        {/* Timeline de eventos - Cards */}
         <div className="px-6 pb-6">
           <TooltipProvider>
-            <div className="space-y-0">
+            <div className="space-y-3">
               {history.length > 0 ? (
                 history.map((event, idx) => (
-                  <div key={`${event.date}-${idx}`} className="flex items-start gap-4 py-4 border-b border-slate-100 last:border-0">
+                  <div key={`${event.date}-${idx}`} className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-start gap-4">
                     {/* Icono según categoría */}
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
@@ -152,14 +152,14 @@ export function StageDetailPanel({
                     >
                       {event.category === "comunicacion" ? <Mail size={18} /> : iconMap[event.icon] || <FileText size={18} />}
                     </div>
-                    
+
                     {/* Contenido */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center gap-2 flex-wrap">
                         <p className="text-sm font-bold text-slate-900">
                           {event.title}
                         </p>
-                        
+
                         {/* Tooltip del responsable - solo ícono */}
                         {event.responsible && (
                           <Tooltip>
@@ -178,7 +178,7 @@ export function StageDetailPanel({
                       </div>
                       <p className="text-sm text-slate-600 mt-1">{event.desc}</p>
                     </div>
-                    
+
                     {/* Fecha y link */}
                     <div className="text-right shrink-0">
                       <p className="text-sm font-medium text-slate-900">
@@ -199,12 +199,23 @@ export function StageDetailPanel({
                 <div className="text-center py-8 text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
                   {isActiveStage && activeNotebook === "principal"
                     ? "Iniciando gestión..."
-                    : "Sin registros en este cuaderno."}
+                    : "Sin registros en este cuaderno"}
                 </div>
               )}
             </div>
           </TooltipProvider>
         </div>
+    </>
+  )
+
+  if (inline) {
+    return <div className="border-t border-slate-200 mt-6">{content}</div>
+  }
+
+  return (
+    <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <CardContent className="p-0">
+        {content}
       </CardContent>
     </Card>
   )

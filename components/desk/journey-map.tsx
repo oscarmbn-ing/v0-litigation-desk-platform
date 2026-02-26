@@ -74,20 +74,20 @@ export function JourneyMap({
   }
 
   return (
-    <div className="relative w-full py-10 px-8">
-      {/* Background track */}
-      <div className="absolute top-1/2 left-8 right-8 h-1 bg-slate-200 -translate-y-1/2 z-0" />
+    <div className="w-full py-8 px-4 md:px-8">
+      <div className="relative flex justify-between items-start w-full">
+        {/* Lines Container (spanning from center of first node to center of last node) */}
+        <div className="absolute top-6 left-12 right-12 h-1 bg-slate-200 -translate-y-1/2 z-0" />
 
-      {/* Progress fill */}
-      <div
-        className={`absolute top-1/2 left-8 h-1 ${theme.fill} -translate-y-1/2 z-0 transition-all duration-1000`}
-        style={{
-          width: `calc(${((currentStage - 1) / (stages.length - 1)) * 100}% - 32px)`,
-        }}
-      />
+        {/* Progress fill */}
+        <div
+          className={`absolute top-6 left-12 h-1 ${theme.fill} -translate-y-1/2 z-0 transition-all duration-1000`}
+          style={{
+            width: `calc((100% - 6rem) * ${((currentStage - 1) / (stages.length - 1))})`,
+          }}
+        />
 
-      {/* Stage nodes */}
-      <div className="relative z-10 flex justify-between w-full">
+        {/* Stage nodes */}
         {stages.map((stage) => {
           const isPast = stage.id < currentStage
           const isCurrent = stage.id === currentStage
@@ -99,8 +99,13 @@ export function JourneyMap({
             <button
               type="button"
               key={stage.id}
-              className={`flex flex-col items-center group cursor-pointer bg-transparent border-0 p-0 transform transition-transform duration-300 ${isSelected ? "scale-105" : "hover:scale-105"}`}
-              onClick={() => onSelectStage(stage.id)}
+              disabled={isFuture}
+              className={`flex flex-col items-center group bg-transparent border-0 p-0 transform transition-transform duration-300 relative z-10 w-24 ${
+                isFuture 
+                  ? "cursor-not-allowed" 
+                  : "cursor-pointer " + (isSelected ? "scale-105" : "hover:scale-105")
+              }`}
+              onClick={() => !isFuture && onSelectStage(stage.id)}
             >
               <div
                 className={`
@@ -113,12 +118,6 @@ export function JourneyMap({
                 {isPast && <span className="text-sm font-bold">{stage.id}</span>}
                 {isCurrent && <CheckCircle2 size={24} className="animate-in zoom-in spin-in-90 duration-300" />}
                 {isFuture && <span className="hidden">{stage.id}</span>}
-
-                {isSelected && !isCurrent && (
-                  <div className={`absolute -bottom-2 ${theme.text} transform translate-y-full`}>
-                    <ChevronDown size={20} />
-                  </div>
-                )}
               </div>
               <div
                 className={`mt-4 text-xs font-semibold transition-colors
@@ -135,6 +134,11 @@ export function JourneyMap({
                   `}
                 >
                   {daysLabel}
+                </div>
+              )}
+              {isSelected && (
+                <div className={`mt-1 ${isCurrent ? "text-slate-900" : theme.text}`}>
+                  <ChevronDown size={18} />
                 </div>
               )}
             </button>

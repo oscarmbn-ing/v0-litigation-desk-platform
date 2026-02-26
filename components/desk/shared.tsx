@@ -10,15 +10,13 @@ export function HealthAvatar({
   health: "critical" | "warning" | "healthy"
 }) {
   const colors: Record<string, string> = {
-    critical: "border-rose-500 text-rose-600 bg-rose-50",
-    warning: "border-amber-400 text-amber-600 bg-amber-50",
-    healthy: "border-emerald-400 text-emerald-600 bg-emerald-50",
+    critical: "text-rose-600 bg-rose-50",
+    warning: "text-amber-600 bg-amber-50",
+    healthy: "text-emerald-600 bg-emerald-50",
   }
-  const pulse =
-    health === "critical" ? "animate-pulse ring-4 ring-rose-100" : ""
   return (
     <div
-      className={`w-12 h-12 rounded-full border-2 flex items-center justify-center font-bold text-sm ${colors[health]} ${pulse}`}
+      className={`w-10 h-10 rounded-full flex items-center justify-center font-medium text-sm ${colors[health]}`}
     >
       {initials}
     </div>

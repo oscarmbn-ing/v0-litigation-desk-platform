@@ -31,11 +31,13 @@ export function ProtectionStageDetailPanel({
   contractData,
   isActiveStage,
   stages,
+  inline = false,
 }: {
   stageId: number
   contractData: ContractData
   isActiveStage: boolean
   stages: Stage[]
+  inline?: boolean
 }) {
   const stageHistory = contractData.history[stageId]
   let history: HistoryEvent[] = stageHistory ? [...stageHistory] : []
@@ -48,28 +50,27 @@ export function ProtectionStageDetailPanel({
 
   const stageInfo = stages.find((s) => s.id === stageId)
 
-  return (
-    <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
-      <CardContent className="p-0">
-        <div className="p-6 pb-4">
-          <div className="flex flex-col gap-2">
-            <div>
-              <h3 className="font-bold text-slate-900 text-xl">
-                Bitácora: {stageInfo?.label}
-              </h3>
-              <p className="text-sm text-slate-500">Historial de eventos</p>
-            </div>
+  const content = (
+    <>
+      <div className={inline ? "px-6 pt-6 pb-4" : "px-6 pt-6 pb-4"}>
+        <div className="flex flex-col gap-2">
+          <div>
+            <h3 className="font-bold text-slate-900 text-xl">
+              Bitácora: {stageInfo?.label}
+            </h3>
+            <p className="text-sm text-slate-500">Historial de eventos</p>
           </div>
         </div>
+      </div>
 
         <div className="px-6 pb-6">
           <TooltipProvider>
-            <div className="space-y-0">
+            <div className="space-y-3">
               {history.length > 0 ? (
                 history.map((event, idx) => (
                   <div
                     key={`${event.date}-${idx}`}
-                    className="flex items-start gap-4 py-4 border-b border-slate-100 last:border-0"
+                    className="bg-white rounded-xl border border-slate-200 shadow-sm p-4 flex items-start gap-4"
                   >
                     <div
                       className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${
@@ -131,12 +132,23 @@ export function ProtectionStageDetailPanel({
                 <div className="text-center py-8 text-slate-400 italic bg-slate-50 rounded-xl border border-dashed border-slate-200">
                   {isActiveStage
                     ? "Iniciando gestión..."
-                    : "Sin registros en esta etapa."}
+                    : "Sin registros en esta etapa"}
                 </div>
               )}
             </div>
           </TooltipProvider>
         </div>
+    </>
+  )
+
+  if (inline) {
+    return <div className="border-t border-slate-200 mt-6">{content}</div>
+  }
+
+  return (
+    <Card className="rounded-2xl border border-slate-200 shadow-sm overflow-hidden">
+      <CardContent className="p-0">
+        {content}
       </CardContent>
     </Card>
   )

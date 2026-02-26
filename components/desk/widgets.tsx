@@ -156,11 +156,11 @@ export function DossierWidget({
       <div className="mb-4 flex justify-between items-start">
         <div>
           <h3 className="text-lg font-bold text-slate-900">
-            {activeTab === "caso" ? "Información del caso" : "Información del cliente"}
+            {activeTab === "caso" ? "Datos del Caso" : "Datos del Cliente"}
           </h3>
           <div className="flex items-center gap-2">
             <p className="text-sm text-slate-500">
-              {activeTab === "caso" ? "Información del caso" : "Información del cliente"}
+              Información General
             </p>
             {isEditing ? (
               <div className="flex items-center gap-1">
@@ -193,7 +193,7 @@ export function DossierWidget({
             type="button"
             onClick={() => { setActiveTab("cliente"); setIsEditing(false) }}
             className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "cliente"
-              ? "bg-white text-slate-900 border border-slate-200 shadow-sm"
+              ? "bg-indigo-950 text-white shadow-sm"
               : "text-slate-500 hover:text-slate-700"}`}
           >
             Cliente
@@ -335,11 +335,11 @@ export function DossierWidget({
                   type="text"
                   value={draftRut}
                   onChange={(e) => setDraftRut(e.target.value)}
-                  className="w-full px-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 hover:border-indigo-300 transition-colors bg-white text-slate-700 font-mono"
+                  className="w-full px-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 hover:border-indigo-300 transition-colors bg-white text-slate-700"
                 />
               ) : (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5">
-                  <span className="text-sm font-semibold text-slate-700 font-mono">{rut}</span>
+                  <span className="text-sm font-semibold text-slate-700">{rut}</span>
                 </div>
               )}
             </div>
@@ -352,11 +352,11 @@ export function DossierWidget({
                   type="text"
                   value={draftClaveUnica}
                   onChange={(e) => setDraftClaveUnica(e.target.value)}
-                  className="w-full px-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 hover:border-indigo-300 transition-colors bg-white text-slate-700 font-mono"
+                  className="w-full px-4 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-500 hover:border-indigo-300 transition-colors bg-white text-slate-700"
                 />
               ) : (
                 <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 flex items-center justify-between gap-2">
-                  <span className="text-sm font-semibold text-slate-700 font-mono tracking-widest">
+                  <span className="text-sm font-semibold text-slate-700">
                     {claveVisible ? claveUnica : "•".repeat(claveUnica.length)}
                   </span>
                   <div className="flex items-center gap-2 shrink-0">
@@ -467,49 +467,57 @@ export function ProtectionWidget({
 
   return (
     <div className="bg-white rounded-2xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
-      <div className="flex items-center gap-2 mb-4 border-b border-slate-100 pb-2">
-        <ShieldCheck size={18} className="text-emerald-600" />
-        <h4 className="text-sm font-bold text-slate-800 uppercase tracking-wider">
-          Ficha del Contrato
-        </h4>
-      </div>
-      <div className="space-y-4">
+      <div className="mb-4 flex justify-between items-start">
         <div>
-          <span className="text-xs font-bold text-slate-400 uppercase mb-1 block">
-            Identificación del contrato
+          <h3 className="text-lg font-bold text-slate-900">
+            Información del contrato
+          </h3>
+          <p className="text-sm text-slate-500">
+            Ficha del contrato
+          </p>
+        </div>
+      </div>
+      <div className="space-y-5">
+        <div>
+          <span className="text-sm font-bold text-slate-900 mb-2 block">
+            Identificación del contrato:
           </span>
-          <div className="bg-slate-50 text-slate-700 px-3 py-2 rounded-lg font-medium text-sm border border-slate-100">
-            {contractIdentification}
+          <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5">
+            <span className="text-sm font-semibold text-slate-800">
+              {contractIdentification}
+            </span>
           </div>
         </div>
         <div>
-          <span className="text-xs font-bold text-slate-400 uppercase mb-1 block">
-            Equipo
+          <span className="text-sm font-bold text-slate-900 mb-2 block">
+            Equipo:
           </span>
-          <div className="bg-slate-50 text-slate-700 px-3 py-2 rounded-lg text-sm border border-slate-100 space-y-1.5">
-            <div className="flex items-center gap-2">
-              <Briefcase size={14} className="text-slate-400" />
+          <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5 space-y-2">
+            <div className="flex items-center gap-2 text-sm text-slate-700">
+              <Briefcase size={14} className="text-slate-400 shrink-0" />
               <span>Camilo Cortés - Abogado</span>
             </div>
-            <div className="flex items-center gap-2">
-              <Users size={14} className="text-slate-400" />
+            <div className="flex items-center gap-2 text-sm text-slate-700">
+              <Users size={14} className="text-slate-400 shrink-0" />
               <span>Andrea Solís - Ejecutiva</span>
             </div>
           </div>
         </div>
         <div>
-          <span className="text-xs font-bold text-slate-400 uppercase mb-1 block">
-            Registro
+          <span className="text-sm font-bold text-slate-900 mb-2 block">
+            Registro:
           </span>
-          <div className="bg-slate-50 text-slate-700 px-3 py-2 rounded-lg font-medium text-sm border border-slate-100">
-            {contractRegistry}
+          <div className="bg-slate-50 border border-slate-100 rounded-xl px-4 py-2.5">
+            <span className="text-sm font-semibold text-slate-800">
+              {contractRegistry}
+            </span>
           </div>
         </div>
 
         {contractData.documents && contractData.documents.length > 0 && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-xs font-bold text-slate-400 uppercase">Documentos</span>
+              <span className="text-sm font-bold text-slate-900">Documentos:</span>
               <span className={`text-xs font-bold px-2 py-0.5 rounded-md ${contractData.documents.every(d => d.received)
                 ? "bg-emerald-50 text-emerald-700 border border-emerald-100"
                 : "bg-amber-50 text-amber-700 border border-amber-100"
@@ -517,11 +525,11 @@ export function ProtectionWidget({
                 {contractData.documents.filter(d => d.received).length}/{contractData.documents.length} recibidos
               </span>
             </div>
-            <div className="space-y-1.5">
+            <div className="space-y-2">
               {contractData.documents.map((doc) => (
                 <div
                   key={doc.name}
-                  className="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm border bg-slate-50 border-slate-100 text-slate-700"
+                  className="flex items-center gap-2.5 px-4 py-2.5 rounded-xl border bg-slate-50 border-slate-100 text-sm text-slate-700"
                 >
                   <span className={`shrink-0 w-4 h-4 rounded-full flex items-center justify-center ${doc.received
                     ? "bg-emerald-500 text-white"
@@ -626,7 +634,7 @@ export function NotesWidget({
               type="button"
               onClick={() => setActiveTab("client")}
               className={`px-4 py-1.5 text-sm font-semibold rounded-md transition-all ${activeTab === "client"
-                ? "bg-white text-slate-900 border border-slate-200 shadow-sm"
+                ? "bg-indigo-950 text-white shadow-sm"
                 : "text-slate-500 hover:text-slate-700"
                 }`}
             >
