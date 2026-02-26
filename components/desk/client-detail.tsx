@@ -17,11 +17,26 @@ import {
   Clock3,
   X,
   Siren,
+  Building2,
+  Landmark,
+  BookOpen,
+  ChevronLeft,
+  ChevronRight,
+  MoreVertical,
+  Search,
+  HelpCircle,
+  Mail,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Dialog, DialogContent, DialogTitle } from "@/components/ui/dialog"
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu"
 import type { Client, ContractData } from "@/lib/data"
 import { JUDICIAL_STAGES, PROTECTION_STAGES } from "@/lib/data"
 import { JourneyMap } from "./journey-map"
@@ -98,6 +113,9 @@ export function ClientDetail({
       : null
   )
   const [emailTo, setEmailTo] = useState(client.email)
+  const [showCcField, setShowCcField] = useState(false)
+  const [ccInput, setCcInput] = useState("")
+  const [ccList, setCcList] = useState<string[]>([])
   const [emailIntro, setEmailIntro] = useState(
     "Te compartimos un resumen breve con los ultimos movimientos de tu caso."
   )
@@ -108,6 +126,8 @@ export function ClientDetail({
   const [summaryScopeFilter, setSummaryScopeFilter] = useState<
     "all" | "judicial" | "protection"
   >("all")
+  const [summarySearchQuery, setSummarySearchQuery] = useState("")
+  const [isSummarySearchOpen, setIsSummarySearchOpen] = useState(false)
 
   const activeCase = useMemo(
     () => client.cases.find((c) => c.id === activeCaseId) ?? client.cases[0],
@@ -349,13 +369,28 @@ export function ClientDetail({
   }, [activeJudicialData, client.protectionData.contracts])
 
   const filteredSummaryMovements = useMemo(() => {
-    if (summaryScopeFilter === "all") return summaryMovements
-    return summaryMovements.filter((movement) => movement.scope === summaryScopeFilter)
-  }, [summaryMovements, summaryScopeFilter])
+    let result = summaryMovements
+    if (summaryScopeFilter !== "all") {
+      result = result.filter((movement) => movement.scope === summaryScopeFilter)
+    }
+    if (summarySearchQuery) {
+      const query = summarySearchQuery.toLowerCase()
+      result = result.filter(
+        (movement) =>
+          (movement.title?.toLowerCase() || "").includes(query) ||
+          (movement.desc?.toLowerCase() || "").includes(query) ||
+          (movement.source?.toLowerCase() || "").includes(query) ||
+          (movement.date?.toLowerCase() || "").includes(query)
+      )
+    }
+    return result
+  }, [summaryMovements, summaryScopeFilter, summarySearchQuery])
 
   useEffect(() => {
     if (!showSummaryModal) return
     setSummaryScopeFilter("all")
+    setSummarySearchQuery("")
+    setIsSummarySearchOpen(false)
     setEmailTo(client.email)
     setEmailIntro("Te compartimos un resumen breve con los ultimos movimientos de tu caso.")
     setEmailClosing("Quedamos atentos a tus comentarios.")
@@ -398,23 +433,38 @@ export function ClientDetail({
   }
 
   return (
-    <div className="relative">
-      <button
-        type="button"
-        onClick={onBack}
-        className="mb-4 text-sm text-slate-500 hover:text-indigo-950 flex items-center gap-1 bg-transparent border-0 cursor-pointer"
-      >
-        &larr; Volver al radar
-      </button>
+    <div className="flex flex-col h-full">
+      <div className="flex items-end justify-between shrink-0 mb-2">
+        <div>
+          <button
+            type="button"
+            onClick={onBack}
+            className="flex items-center gap-0.5 text-sm text-slate-400 hover:text-indigo-950 transition-colors mb-1 bg-transparent border-0 cursor-pointer -ml-1"
+          >
+            <ChevronLeft size={16} />
+            Volver al radar
+          </button>
+          <h2 className="text-2xl font-bold text-slate-900">Centro de Comando</h2>
+        </div>
+        <div className="flex items-center gap-2">
+          <Button variant="ghost" size="sm" className="flex items-center gap-2 text-slate-600 hover:text-indigo-900 hover:bg-indigo-50" onClick={() => window.open("https://oficinajudicialvirtual.pjud.cl/home/index.php#", "_blank")} title="Oficina Judicial Virtual">
+            <Scale className="h-4 w-4" /><span className="hidden sm:inline font-medium">OJV</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="flex items-center gap-2 text-slate-600 hover:text-emerald-900 hover:bg-emerald-50" onClick={() => window.open("https://homer.sii.cl/", "_blank")} title="Servicio de Impuestos Internos">
+            <Building2 className="h-4 w-4" /><span className="hidden sm:inline font-medium">SII</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="flex items-center gap-2 text-slate-600 hover:text-rose-900 hover:bg-rose-50" onClick={() => window.open("https://www.cmfchile.cl/", "_blank")} title="Comisión para el Mercado Financiero">
+            <Landmark className="h-4 w-4" /><span className="hidden sm:inline font-medium">CMF</span>
+          </Button>
+          <Button variant="ghost" size="sm" className="flex items-center gap-2 text-slate-600 hover:text-amber-900 hover:bg-amber-50" onClick={() => window.open("https://www.boletinconcursal.cl/boletin/procedimientos", "_blank")} title="Boletín Concursal">
+            <BookOpen className="h-4 w-4" /><span className="hidden sm:inline font-medium">BCL</span>
+          </Button>
+        </div>
+      </div>
 
+      <div className="flex-1 overflow-y-auto pr-1">
       {/* Header + Context Switch */}
       <Card className="rounded-3xl shadow-sm border border-slate-200 mb-6 relative z-10 overflow-visible">
-        <div
-          className={`absolute top-0 left-0 w-full h-1 rounded-t-3xl ${contextView === "judicial"
-            ? "bg-gradient-to-r from-indigo-950 via-violet-900 to-indigo-950"
-            : "bg-gradient-to-r from-emerald-500 via-teal-500 to-cyan-500"
-            }`}
-        />
         <CardContent className="p-8 md:p-10">
           <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
             <div>
@@ -449,7 +499,7 @@ export function ClientDetail({
                       }
                     >
                       <FolderOpen size={16} className="text-indigo-950" />
-                      <span className="text-sm font-mono font-bold text-slate-800">
+                      <span className="text-sm font-bold text-slate-800">
                         {activeCaseId}
                       </span>
                       <span className="text-sm text-slate-400">|</span>
@@ -573,6 +623,57 @@ export function ClientDetail({
             </div>
           </div>
 
+          {/* Propiedades del caso/contrato */}
+          <div className="mb-6 pt-6 border-t border-slate-100">
+            {contextView === "judicial" ? (
+              <div className="flex flex-col gap-2 text-sm text-slate-600">
+                <div className="flex items-center justify-between">
+                  <span><span className="font-bold text-slate-900">Tribunal:</span> 1° Juzgado Civil de Santiago</span>
+                  <span><span className="font-bold text-slate-900">Tipo reclamación:</span> Dilatoria a secas</span>
+                </div>
+                <div className="flex items-center justify-between">
+                  <span><span className="font-bold text-slate-900">Acreedor:</span> {activeCase?.creditor ?? client.activeCreditor}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900">Índice de riesgo:</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                      client.health === "critical"
+                        ? "bg-rose-50 text-rose-700"
+                        : client.health === "warning"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
+                    }`}>
+                      {client.health === "critical" ? "Crítico" :
+                        client.health === "warning" ? "Medio" :
+                          "Bajo"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            ) : (
+              <div className="flex flex-col gap-2 text-sm text-slate-600">
+                <div className="flex items-center justify-between">
+                  <span><span className="font-bold text-slate-900">Registro:</span> {(currentData as ContractData)?.type?.toLowerCase().includes("vehiculo")
+                    ? "Registro de Vehículos Motorizados"
+                    : "Conservador de Bienes Raíces de Santiago"}</span>
+                  <span className="flex items-center gap-2">
+                    <span className="font-bold text-slate-900">Índice de riesgo:</span>
+                    <span className={`inline-flex items-center px-2.5 py-0.5 rounded-md text-xs font-semibold ${
+                      client.health === "critical"
+                        ? "bg-rose-50 text-rose-700"
+                        : client.health === "warning"
+                          ? "bg-amber-50 text-amber-700"
+                          : "bg-emerald-50 text-emerald-700"
+                    }`}>
+                      {client.health === "critical" ? "Crítico" :
+                        client.health === "warning" ? "Medio" :
+                          "Bajo"}
+                    </span>
+                  </span>
+                </div>
+              </div>
+            )}
+          </div>
+
           {/* Journey Map or Inactive State */}
           {contextView === "protection" && !client.protectionData.isActive ? (
             <div className="bg-slate-50 rounded-xl p-8 border border-slate-100 text-center">
@@ -599,52 +700,8 @@ export function ClientDetail({
                   stageDates={currentData?.stageDates}
                 />
 
-                <div className="mt-6 pt-4 border-t border-slate-200">
-                  {contextView === "judicial" ? (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm text-slate-600">
-                      <p>
-                        <span className="font-bold text-slate-900">Tribunal: </span>
-                        1° Juzgado Civil de Santiago
-                      </p>
-                      <p className="md:text-right">
-                        <span className="font-bold text-slate-900">Tipo reclamación: </span>
-                        Dilatoria a secas
-                      </p>
-                      <p>
-                        <span className="font-bold text-slate-900">Acreedor: </span>
-                        {activeCase?.creditor ?? client.activeCreditor}
-                      </p>
-                      <p className="md:text-right">
-                        <span className="font-bold text-slate-900">Índice de riesgo: </span>
-                        {client.health === "critical" ? "Crítico" :
-                          client.health === "warning" ? "Precaución" :
-                            "Estable"}
-                      </p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-2 text-sm text-slate-600">
-                      <p>
-                        <span className="font-bold text-slate-900">Registro: </span>
-                        {(currentData as ContractData)?.type?.toLowerCase().includes("vehiculo")
-                          ? "Registro de Vehículos Motorizados"
-                          : "Conservador de Bienes Raíces de Santiago"}
-                      </p>
-                      <p className="md:text-right">
-                        <span className="font-bold text-slate-900">Índice de riesgo: </span>
-                        {client.health === "critical" ? "Crítico" :
-                          client.health === "warning" ? "Precaución" :
-                            "Estable"}
-                      </p>
-                    </div>
-                  )}
-                </div>
-              </div>
-
-              {viewingStageId && contextView === "judicial" ? (
-                <div className="mt-6 animate-in slide-in-from-top-4 duration-500 fade-in">
-                  <div className="flex justify-center mb-2">
-                    <ChevronDown className="text-slate-300 animate-bounce" />
-                  </div>
+                {/* Bitácora/Stage Detail Panel */}
+                {viewingStageId && contextView === "judicial" ? (
                   <StageDetailPanel
                     stageId={viewingStageId}
                     judicialData={activeJudicialData}
@@ -654,17 +711,13 @@ export function ClientDetail({
                     stages={currentStages}
                     activeNotebook={activeNotebook}
                     onNotebookChange={setActiveNotebook}
+                    inline
                   />
-                </div>
-              ) : null}
+                ) : null}
 
-              {viewingStageId &&
-                contextView === "protection" &&
-                currentData && (
-                  <div className="mt-6 animate-in slide-in-from-top-4 duration-500 fade-in">
-                    <div className="flex justify-center mb-2">
-                      <ChevronDown className="text-slate-300 animate-bounce" />
-                    </div>
+                {viewingStageId &&
+                  contextView === "protection" &&
+                  currentData && (
                     <ProtectionStageDetailPanel
                       stageId={viewingStageId}
                       contractData={currentData as ContractData}
@@ -672,9 +725,10 @@ export function ClientDetail({
                         viewingStageId === (currentData as ContractData).currentStage
                       }
                       stages={currentStages}
+                      inline
                     />
-                  </div>
-                )}
+                  )}
+              </div>
             </>
           )}
         </CardContent>
@@ -709,30 +763,32 @@ export function ClientDetail({
                     <div
                       key={task.id}
                       className={cn(
-                        "flex items-center justify-between py-3 border-b last:border-0",
-                        isMovement
-                          ? "bg-indigo-50/50 -mx-3 px-3 rounded-lg border-indigo-100"
-                          : "border-slate-100"
+                        "flex items-center justify-between p-4 rounded-xl border shadow-sm transition-all",
+                        isOwner
+                          ? isMovement
+                            ? "bg-indigo-50/50 border-indigo-200 hover:shadow-md hover:border-indigo-300 cursor-pointer"
+                            : "bg-white border-slate-200 hover:shadow-md hover:border-slate-300 cursor-pointer"
+                          : "bg-slate-50 border-slate-200 opacity-60 cursor-not-allowed"
                       )}
                     >
                       <div className="flex items-start gap-3">
                         <div
                           className={cn(
                             "p-2 rounded-lg",
-                            isMovement ? "bg-indigo-100" : "bg-slate-100"
+                            isMovement ? "bg-indigo-100" : isOwner ? "bg-slate-100" : "bg-slate-200"
                           )}
                         >
                           {isMovement ? (
                             <Siren size={16} className="text-indigo-600" />
                           ) : (
-                            <ScrollText size={16} className="text-slate-600" />
+                            <ScrollText size={16} className={isOwner ? "text-slate-600" : "text-slate-400"} />
                           )}
                         </div>
                         <div>
-                          <h4 className="font-semibold text-sm text-slate-900">
+                          <h4 className={cn("font-semibold text-sm", isOwner ? "text-slate-900" : "text-slate-500")}>
                             {task.title}
                           </h4>
-                          <p className="text-xs text-slate-500">
+                          <p className={cn("text-xs", isOwner ? "text-slate-500" : "text-slate-400")}>
                             {task.assignee}
                           </p>
                         </div>
@@ -741,21 +797,23 @@ export function ClientDetail({
                         <span
                           className={`text-xs font-bold ${task.status === "urgent"
                             ? "text-rose-600"
-                            : "text-slate-600"
+                            : isOwner ? "text-slate-600" : "text-slate-400"
                             }`}
                         >
                           {task.status === "urgent" ? "Hoy" : task.due}
                         </span>
                         {isOwner ? (
                           <div
-                            className="text-xs text-indigo-950 hover:underline cursor-pointer mt-0.5 font-medium"
+                            className="flex items-center gap-0.5 text-xs text-indigo-950 hover:underline cursor-pointer mt-0.5 font-medium"
                             onClick={() => onNavigateToTask?.(String(task.id))}
                           >
-                            Ir a movimiento
+                            Ir a misión
+                            <ChevronRight size={12} />
                           </div>
                         ) : (
-                          <p className="text-xs text-slate-300 cursor-not-allowed mt-0.5">
-                            Ir a movimiento
+                          <p className="flex items-center gap-0.5 text-xs text-slate-400 cursor-not-allowed mt-0.5">
+                            Ir a misión
+                            <ChevronRight size={12} />
                           </p>
                         )}
                       </div>
@@ -821,6 +879,8 @@ export function ClientDetail({
             </CardContent>
           </Card>
         </div>
+      </div>
+
       </div>
 
       <Dialog open={showBitacoraModal} onOpenChange={setShowBitacoraModal}>
@@ -1092,97 +1152,173 @@ export function ClientDetail({
       </Dialog>
 
       <Dialog open={showSummaryModal} onOpenChange={setShowSummaryModal}>
-        <DialogContent className="max-w-[860px] w-[88vw] p-0 gap-0 border-slate-200 rounded-2xl overflow-hidden">
-          <div className="px-6 py-4 border-b border-slate-200 bg-white">
-            <DialogTitle className="text-xl font-bold text-slate-900">
-              Enviar resumen al cliente
-            </DialogTitle>
-            <p className="text-sm text-slate-500 mt-1">
-              Selecciona los movimientos a informar y previsualiza el correo antes de enviarlo.
-            </p>
+        <DialogContent className="max-w-[1200px] w-[96vw] max-h-[90vh] p-0 gap-0 border-slate-200 rounded-2xl overflow-hidden my-auto flex flex-col h-[85vh]" hideClose>
+          {/* Barra de título tipo ventana de aplicación */}
+          <div className="px-6 py-2.5 bg-white border-b border-slate-200 flex items-center justify-between shrink-0">
+            <div className="flex items-center gap-3">
+              <div className="w-8 h-8 flex items-center justify-center rounded-lg bg-indigo-100 text-indigo-600">
+                <Mail size={16} />
+              </div>
+              <DialogTitle className="text-base font-semibold text-slate-900 leading-none">
+                Enviar resumen al cliente
+              </DialogTitle>
+              <button
+                type="button"
+                className="w-5 h-5 flex items-center justify-center rounded text-slate-400 hover:text-slate-500 hover:bg-slate-100 transition-colors"
+                title="Selecciona los movimientos a informar y previsualiza el correo"
+              >
+                <HelpCircle size={12} />
+              </button>
+            </div>
+            <button
+              type="button"
+              onClick={() => setShowSummaryModal(false)}
+              className="w-7 h-7 flex items-center justify-center rounded-lg text-slate-400 hover:text-rose-500 hover:bg-rose-50 transition-colors"
+              title="Cerrar"
+            >
+              <X size={18} strokeWidth={2.5} />
+            </button>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-2 h-[70vh]">
-            <div className="p-4 border-r border-slate-200 bg-slate-50 flex flex-col min-h-0">
-              <div className="flex items-center justify-between mb-3">
-                <h4 className="text-sm font-bold uppercase tracking-wide text-slate-600">
-                  Movimientos disponibles
-                </h4>
-                <div className="flex items-center gap-2">
-                  <button
-                    type="button"
-                    className="text-xs text-indigo-950 hover:underline"
-                    onClick={() =>
-                      setSelectedSummaryIds((prev) => {
-                        const next = new Set(prev)
-                        filteredSummaryMovements.forEach((movement) => next.add(movement.id))
-                        return Array.from(next)
-                      })
-                    }
-                  >
-                    Seleccionar todos
-                  </button>
-                  <button
-                    type="button"
-                    className="text-xs text-slate-500 hover:underline"
-                    onClick={() => setSelectedSummaryIds([])}
-                  >
-                    Limpiar
-                  </button>
+          {/* Layout tipo editor: Sidebar izquierda + Canvas derecha */}
+          <div className="flex flex-1 min-h-0">
+            {/* Sidebar - Movimientos disponibles */}
+            <div className="w-[360px] flex flex-col bg-slate-50 border-r border-slate-200">
+              {/* Header: título + filtros + buscador */}
+              <div className="px-4 py-3 border-b border-slate-200">
+                {/* Título y seleccionados */}
+                <div className="flex items-center justify-between mb-2">
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    Movimientos
+                  </span>
+                  <span className="text-[11px] text-slate-500 font-medium">
+                    {selectedSummaryIds.length} seleccionados
+                  </span>
+                </div>
+
+                <div className="flex items-center gap-1">
+                  {/* Filtros o Buscador */}
+                  <div className="flex items-center gap-1 flex-1 min-w-0 h-[26px]">
+                    {isSummarySearchOpen ? (
+                      <div className="flex items-center w-full gap-1 h-full">
+                        <button
+                          type="button"
+                          onClick={() => {
+                            setIsSummarySearchOpen(false)
+                            setSummarySearchQuery("")
+                          }}
+                          className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors shrink-0 flex items-center justify-center"
+                          title="Cerrar búsqueda"
+                        >
+                          <ChevronLeft size={14} />
+                        </button>
+                        <input
+                          type="text"
+                          value={summarySearchQuery}
+                          onChange={(e) => setSummarySearchQuery(e.target.value)}
+                          placeholder="Buscar movimientos..."
+                          className="flex-1 text-[11px] px-3 py-1 rounded-full bg-white border border-slate-200 outline-none focus:border-indigo-400 focus:ring-1 focus:ring-indigo-400 transition-all min-w-0"
+                          autoFocus
+                        />
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-1 w-full h-full">
+                        <button
+                          type="button"
+                          onClick={() => setIsSummarySearchOpen(true)}
+                          className="p-1 rounded text-slate-400 hover:text-slate-600 hover:bg-slate-200 transition-colors shrink-0 flex items-center justify-center h-full"
+                          title="Buscar"
+                        >
+                          <Search size={14} />
+                        </button>
+                        <div className="flex gap-1 flex-1 overflow-x-auto no-scrollbar items-center min-w-0">
+                          <button
+                            type="button"
+                            onClick={() => setSummaryScopeFilter("all")}
+                            className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap ${summaryScopeFilter === "all"
+                              ? "bg-indigo-950 text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                          >
+                            Todos
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSummaryScopeFilter("judicial")}
+                            className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap ${summaryScopeFilter === "judicial"
+                              ? "bg-indigo-950 text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                          >
+                            Litigios
+                          </button>
+                          <button
+                            type="button"
+                            onClick={() => setSummaryScopeFilter("protection")}
+                            className={`px-2 py-1 text-[11px] font-medium rounded transition-colors whitespace-nowrap ${summaryScopeFilter === "protection"
+                              ? "bg-emerald-600 text-white"
+                              : "bg-slate-100 text-slate-600 hover:bg-slate-200"
+                              }`}
+                          >
+                            P. Patrimonial
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Menú de tres puntos con acciones */}
+                  <DropdownMenu>
+                    <DropdownMenuTrigger asChild>
+                      <button
+                        type="button"
+                        className="p-1 rounded hover:bg-slate-200 text-slate-500 transition-colors"
+                      >
+                        <MoreVertical size={14} />
+                      </button>
+                    </DropdownMenuTrigger>
+                    <DropdownMenuContent align="end" className="w-40">
+                      <DropdownMenuItem
+                        onClick={() =>
+                          setSelectedSummaryIds((prev) => {
+                            const next = new Set(prev)
+                            filteredSummaryMovements.forEach((movement) => next.add(movement.id))
+                            return Array.from(next)
+                          })
+                        }
+                      >
+                        Seleccionar todos
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => setSelectedSummaryIds([])}
+                      >
+                        Limpiar selección
+                      </DropdownMenuItem>
+                    </DropdownMenuContent>
+                  </DropdownMenu>
                 </div>
               </div>
-              <div className="mb-3 inline-flex rounded-lg border border-slate-200 bg-white p-1 gap-1">
-                <button
-                  type="button"
-                  onClick={() => setSummaryScopeFilter("all")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${summaryScopeFilter === "all"
-                    ? "bg-indigo-950 text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                    }`}
-                >
-                  Todos
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSummaryScopeFilter("judicial")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${summaryScopeFilter === "judicial"
-                    ? "bg-indigo-950 text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                    }`}
-                >
-                  Litigios
-                </button>
-                <button
-                  type="button"
-                  onClick={() => setSummaryScopeFilter("protection")}
-                  className={`px-2.5 py-1 text-xs font-medium rounded-md transition-colors ${summaryScopeFilter === "protection"
-                    ? "bg-indigo-950 text-white"
-                    : "text-slate-600 hover:bg-slate-100"
-                    }`}
-                >
-                  P. Patrimonial
-                </button>
-              </div>
 
-              <div className="space-y-2 flex-1 min-h-0 overflow-y-auto pr-1">
+              {/* Lista de movimientos */}
+              <div className="flex-1 overflow-y-auto p-3 space-y-2">
                 {filteredSummaryMovements.map((movement) => {
                   const checked = selectedSummaryIds.includes(movement.id)
                   const isProtectionMovement = movement.scope === "protection"
                   return (
                     <label
                       key={movement.id}
-                      className={`flex items-start gap-3 p-3 rounded-xl border cursor-pointer transition-colors ${isProtectionMovement
+                      className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer transition-all ${isProtectionMovement
                         ? checked
-                          ? "bg-emerald-50/60 border-emerald-200"
-                          : "bg-emerald-50/35 border-emerald-100 hover:border-emerald-200"
+                          ? "bg-emerald-50 border-emerald-300 shadow-sm"
+                          : "bg-white border-slate-200 hover:border-emerald-300"
                         : checked
-                          ? "bg-indigo-50/60 border-indigo-200"
-                          : "bg-indigo-50/35 border-indigo-100 hover:border-indigo-200"
+                          ? "bg-indigo-50 border-indigo-300 shadow-sm"
+                          : "bg-white border-slate-200 hover:border-indigo-300"
                         }`}
                     >
                       <input
                         type="checkbox"
-                        className="mt-1"
+                        className="mt-0.5 shrink-0"
                         checked={checked}
                         onChange={(e) => {
                           if (e.target.checked) {
@@ -1194,19 +1330,24 @@ export function ClientDetail({
                           }
                         }}
                       />
-                      <div className="min-w-0">
-                        <p className="text-sm font-semibold text-slate-900 leading-tight">
+                      <div className="min-w-0 flex-1">
+                        <p className="text-[13px] font-medium text-slate-900 leading-tight">
                           {movement.title}
                         </p>
-                        <p className="text-xs text-slate-600 mt-1 leading-snug">
+                        <p className="text-[11px] text-slate-500 mt-1 leading-snug line-clamp-2">
                           {movement.desc}
                         </p>
-                        <p
-                          className={`text-xs mt-1 ${isProtectionMovement ? "text-emerald-700/70" : "text-indigo-700/70"
-                            }`}
-                        >
-                          {movement.date} · {movement.source}
-                        </p>
+                        <div className="flex items-center gap-2 mt-2">
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded ${isProtectionMovement
+                            ? "bg-emerald-100 text-emerald-700"
+                            : "bg-indigo-100 text-indigo-700"
+                            }`}>
+                            {movement.source}
+                          </span>
+                          <span className="text-[9px] text-slate-400">
+                            {movement.date}
+                          </span>
+                        </div>
                       </div>
                     </label>
                   )
@@ -1214,104 +1355,254 @@ export function ClientDetail({
               </div>
             </div>
 
-            <div className="p-4 bg-white flex flex-col min-h-0">
-              <div className="space-y-3 mb-4">
-                <div>
-                  <label className="text-xs font-semibold uppercase tracking-wide text-slate-500 block mb-1">
-                    Para
-                  </label>
-                  <input
-                    type="email"
-                    value={emailTo}
-                    onChange={(e) => setEmailTo(e.target.value)}
-                    className="w-full px-3 py-2 rounded-lg border border-slate-200 text-sm"
-                  />
-                </div>
+            {/* Canvas derecho - Preview del email */}
+            <div className="flex-1 flex flex-col bg-white min-w-0">
+              {/* Toolbar - Barra blanca con Para y email */}
+              <div className="px-6 py-2 border-b border-slate-200 flex items-center bg-white shrink-0 gap-3">
+                {/* Para - lado izquierdo, color mas claro */}
+                <span className="text-sm text-slate-400 font-medium shrink-0">Para:</span>
+
+                {/* Email principal - como pila sin opcion de eliminar */}
+                <span className="inline-flex items-center px-2 py-1 bg-slate-100 text-slate-700 text-sm rounded-md">
+                  {emailTo}
+                </span>
+
+                <div className="flex-1" />
+
+                {/* Boton CC - sutil */}
+                {!showCcField && (
+                  <button
+                    type="button"
+                    onClick={() => setShowCcField(true)}
+                    className="px-2 py-1 text-[11px] text-slate-400 hover:text-slate-600 hover:bg-slate-100 rounded transition-colors"
+                  >
+                    + Cc
+                  </button>
+                )}
               </div>
 
-              <div className="rounded-xl border border-slate-200 bg-slate-50 p-3 flex-1 min-h-0 overflow-y-auto">
-                <div className="rounded-xl border border-slate-200 bg-white overflow-hidden">
-                  <div className="px-4 py-4 bg-gradient-to-r from-indigo-50 via-white to-slate-50 border-b border-slate-200">
-                    <p className="text-xs font-semibold uppercase tracking-wide text-indigo-700">
-                      LexyDeudor
-                    </p>
-                    <h4 className="text-lg font-bold text-slate-900 mt-1">
-                      Hola {client.name.split(" ")[0]},
-                    </h4>
-                    <p className="text-sm text-slate-700 mt-2 leading-relaxed">
-                      {emailIntro}
-                    </p>
+              {/* Barra CC - aparece cuando se presiona el boton */}
+              {showCcField && (
+                <div className="px-6 py-2 border-b border-slate-200 flex items-center bg-white shrink-0 gap-3">
+                  {/* CC: label */}
+                  <span className="text-sm text-slate-400 font-medium shrink-0">Cc:</span>
+
+                  {/* Tags de correos CC + input */}
+                  <div className="flex-1 flex items-center flex-wrap gap-2">
+                    {ccList.map((email, index) => (
+                      <span
+                        key={index}
+                        className="inline-flex items-center gap-1 px-2 py-1 bg-slate-100 text-slate-700 text-xs rounded-md"
+                      >
+                        {email}
+                        <button
+                          type="button"
+                          onClick={() => setCcList(ccList.filter((_, i) => i !== index))}
+                          className="text-slate-400 hover:text-rose-500 transition-colors"
+                        >
+                          <X size={12} />
+                        </button>
+                      </span>
+                    ))}
+                    <input
+                      type="email"
+                      value={ccInput}
+                      onChange={(e) => setCcInput(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter" && ccInput.trim()) {
+                          e.preventDefault()
+                          setCcList([...ccList, ccInput.trim()])
+                          setCcInput("")
+                        }
+                      }}
+                      className="flex-1 min-w-[120px] text-sm text-slate-700 bg-transparent border-none outline-none placeholder:text-slate-300"
+                      placeholder={ccList.length === 0 ? "Agregar correos..." : "+ Agregar..."}
+                    />
                   </div>
 
-                  <div className="p-4 space-y-3">
+                  {/* Boton para cerrar CC */}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setShowCcField(false)
+                      setCcList([])
+                      setCcInput("")
+                    }}
+                    className="text-slate-400 hover:text-rose-500 transition-colors"
+                    title="Eliminar Cc"
+                  >
+                    <X size={14} />
+                  </button>
+                </div>
+              )}
+
+              {/* Preview del email */}
+              <div className="flex-1 overflow-y-auto bg-[#f3f5f7]">
+                <div className="w-full max-w-full bg-[#f3f5f7] min-h-full">
+                  {/* Header del email - con imagen de fondo */}
+                  <div 
+                    className="px-6 md:px-10 pt-4 pb-11 bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: 'url("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Lexy-Fondo-6-wCXLOiPrUGqn433vZNABCUfMMbiEfA.jpg")' }}
+                  >
+                    <div className="max-w-[600px] mx-auto">
+                      {/* Logo Lexy Deudor alineado derecha */}
+                      <div className="flex justify-end mb-2">
+                        <img 
+                          src="https://lexy.cl/wp-content/uploads/2025/06/LOGODEUDOR-1.svg" 
+                          alt="Lexy Deudor" 
+                          width="150"
+                          className="block max-w-full h-auto -mt-7 -mb-7"
+                        />
+                      </div>
+                      
+                      {/* Saludo */}
+                      <h1 
+                        className="mb-2 leading-tight"
+                        style={{ 
+                          fontSize: '22px',
+                          fontWeight: 500, 
+                          color: '#271d8e',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          lineHeight: 1.3,
+                          margin: '0 0 8px'
+                        }}
+                      >
+                        ¡Hola {client.name.split(" ")[0]}!
+                      </h1>
+                      
+                      {/* Título principal */}
+                      <h2 
+                        className="mb-3 leading-none max-w-[90%]"
+                        style={{ 
+                          fontSize: '34px',
+                          fontWeight: 700, 
+                          color: '#0b013c',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          lineHeight: 1,
+                          letterSpacing: '-1.5px',
+                          margin: '0 0 12px'
+                        }}
+                      >
+                        Manos a la obra.
+                      </h2>
+                      
+                      {/* Subtítulo */}
+                      <p 
+                        style={{ 
+                          fontSize: '18px',
+                          fontWeight: 600,
+                          color: '#344054',
+                          fontFamily: 'system-ui, -apple-system, sans-serif',
+                          lineHeight: 1.5,
+                          margin: 0,
+                          maxWidth: '600px'
+                        }}
+                      >
+                        {emailIntro}
+                      </p>
+                    </div>
+                  </div>
+
+                  {/* Contenido - tarjetas de movimientos estilo Lexy */}
+                  <div className="bg-white w-full">
+                    <div className="max-w-[600px] mx-auto px-6 md:px-10 py-10 space-y-6">
                     {selectedSummaryMovements.length > 0 ? (
                       selectedSummaryMovements.map((movement) => {
                         const isProtectionMovement = movement.scope === "protection"
                         return (
                           <div
                             key={movement.id}
-                            className={`rounded-lg border p-3 ${isProtectionMovement
-                              ? "border-emerald-200 bg-emerald-50/45"
-                              : "border-indigo-200 bg-indigo-50/45"
-                              }`}
+                            className="rounded-2xl border p-6"
+                            style={{
+                              background: 'linear-gradient(135deg, #f2f4ff 0%, #ffffff 100%)',
+                              borderColor: '#e0e4f5'
+                            }}
                           >
-                            <div className="flex items-start justify-between gap-2">
-                              <p className="text-sm font-semibold text-slate-900 leading-tight">
-                                {movement.title}
-                              </p>
-                              <span
-                                className={`text-[11px] font-semibold rounded-full px-2 py-0.5 shrink-0 border ${isProtectionMovement
-                                  ? "text-emerald-700 bg-emerald-100/80 border-emerald-200"
-                                  : "text-indigo-700 bg-indigo-100/80 border-indigo-200"
-                                  }`}
-                              >
-                                {movement.source}
-                              </span>
+                            <div className="flex items-start justify-between gap-4">
+                              <div className="flex-1">
+                                <h3 className="text-lg font-bold text-[#271d8e] mb-2" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                                  {movement.title}
+                                </h3>
+                                <p className="text-sm text-[#475467] leading-relaxed mb-3" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                                  <strong style={{ color: '#271d8e' }}>{movement.source}</strong> · {movement.date}
+                                </p>
+                                <p className="text-sm text-[#344054] leading-relaxed" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                                  {buildClientSummary(movement)}
+                                </p>
+                              </div>
+                              <div className="text-4xl shrink-0">
+                                {isProtectionMovement ? '🛡️' : '⚖️'}
+                              </div>
                             </div>
-                            <p className="text-xs text-slate-500 mt-1">
-                              Fecha: {movement.date}
-                            </p>
-                            <p className="text-sm text-slate-700 mt-2 leading-relaxed">
-                              <span className="font-semibold text-slate-800">Que hicimos: </span>
-                              {buildClientSummary(movement)}
-                            </p>
                           </div>
                         )
                       })
                     ) : (
-                      <p className="text-sm text-slate-400 italic">
-                        No hay movimientos seleccionados.
-                      </p>
+                      <div className="text-center py-12">
+                        <p className="text-sm text-[#475467] italic" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                          Selecciona movimientos de la barra lateral para incluirlos en el resumen.
+                        </p>
+                      </div>
                     )}
+                    </div>
                   </div>
 
-                  <div className="px-4 pb-4 border-t border-slate-200 bg-white">
-                    <p className="text-sm text-slate-700 mt-3">{emailClosing}</p>
-                    <p className="text-sm text-slate-700 mt-2">
-                      Saludos, <br /> Equipo LexyDeudor
-                    </p>
-                    <p className="text-[11px] text-slate-400 mt-3 leading-relaxed">
-                      Este correo es informativo y resume gestiones realizadas por tu equipo legal.
-                    </p>
+                  {/* Footer del email - con imagen de fondo */}
+                  <div 
+                    className="w-full bg-cover bg-center bg-no-repeat"
+                    style={{ backgroundImage: 'url("https://hebbkx1anhila5yf.public.blob.vercel-storage.com/Lexy-Fondo-6-wCXLOiPrUGqn433vZNABCUfMMbiEfA.jpg")' }}
+                  >
+                    <div className="max-w-[600px] mx-auto px-6 md:px-10 py-10 text-center">
+                      <p className="text-sm font-semibold text-[#271d8e] mb-1" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                        Lexy Deudor | Hacemos fácil lo legal
+                      </p>
+                      <p className="text-sm font-semibold text-[#271d8e] mb-3" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                        <a href="https://lexy.cl/" className="text-[#271d8e] no-underline">www.lexy.cl</a>
+                      </p>
+                      <p className="text-[11px] text-[#667085] leading-relaxed max-w-md mx-auto" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                        Este correo y su contenido son confidenciales y están destinados únicamente para el destinatario. Si lo recibió por error, por favor notifíquelo al remitente y elimínelo de su sistema.
+                      </p>
+                    </div>
                   </div>
                 </div>
               </div>
+            </div>
+          </div>
 
-              <div className="flex justify-end gap-2 mt-3">
-                <button
-                  type="button"
-                  className="px-3 py-2 rounded-lg border border-slate-200 text-sm text-slate-600 hover:bg-slate-50"
-                  onClick={() => setShowSummaryModal(false)}
-                >
-                  Cerrar
-                </button>
-                <button
-                  type="button"
-                  className="px-3 py-2 rounded-lg bg-indigo-950 text-white text-sm font-semibold hover:bg-indigo-900"
-                >
-                  Enviar correo
-                </button>
-              </div>
+          {/* Bottom Bar */}
+          <div className="px-6 py-3 bg-white border-t border-slate-200 flex items-center justify-between shrink-0">
+            {/* Cancelar - alineado a la izquierda */}
+            <button
+              type="button"
+              className="px-5 py-2 rounded-lg border border-slate-200 text-sm font-medium text-slate-600 hover:bg-slate-50 transition-colors"
+              onClick={() => setShowSummaryModal(false)}
+            >
+              Cancelar
+            </button>
+
+            {/* Grupo derecha: WhatsApp + Divider + Enviar correo */}
+            <div className="flex items-center gap-3">
+              {/* WhatsApp */}
+              <button
+                type="button"
+                className="w-10 h-10 flex items-center justify-center rounded-lg border border-slate-200 text-emerald-600 hover:bg-emerald-50 hover:border-emerald-300 transition-colors"
+                title="Enviar por WhatsApp"
+              >
+                <svg viewBox="0 0 24 24" className="w-5 h-5" fill="currentColor">
+                  <path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347m-5.421 7.403h-.004a9.87 9.87 0 01-5.031-1.378l-.361-.214-3.741.982.998-3.648-.235-.374a9.86 9.86 0 01-1.51-5.26c.001-5.45 4.436-9.884 9.888-9.884 2.64 0 5.122 1.03 6.988 2.898a9.825 9.825 0 012.893 6.994c-.003 5.45-4.437 9.884-9.885 9.884m8.413-18.297A11.815 11.815 0 0012.05 0C5.495 0 .16 5.335.157 11.892c0 2.096.547 4.142 1.588 5.945L.057 24l6.305-1.654a11.882 11.882 0 005.683 1.448h.005c6.554 0 11.89-5.335 11.893-11.893a11.821 11.821 0 00-3.48-8.413Z"/>
+                </svg>
+              </button>
+
+              {/* Divider */}
+              <div className="w-px h-6 bg-slate-300" />
+
+              {/* Enviar correo */}
+              <button
+                type="button"
+                className="px-5 py-2 rounded-lg bg-indigo-950 text-white text-sm font-medium hover:bg-indigo-900 transition-colors shadow-sm"
+              >
+                Enviar correo
+              </button>
             </div>
           </div>
         </DialogContent>
