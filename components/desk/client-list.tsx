@@ -1,7 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
-import { Search, Filter, ChevronRight, ShieldCheck, Home, PowerOff, Scale, Building2, Landmark, BookOpen, Check, PlusCircle, ChevronDown, Trash2 } from "lucide-react"
+import { Search, Filter, ChevronRight, ShieldCheck, Home, PowerOff, Scale, Building2, Landmark, BookOpen, Check, PlusCircle, ChevronDown, Trash2, Mail, Gavel, ClipboardList, CalendarClock } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover"
 import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command"
@@ -183,27 +183,38 @@ export function ClientList({
         type="button"
         key={client.id}
         onClick={() => onSelectClient(client)}
-        className="bg-white p-4 rounded-2xl border border-slate-100 hover:shadow-sm hover:border-slate-200 transition-all cursor-pointer group text-left w-full"
+        className="bg-white p-4 rounded-2xl border border-slate-200 hover:shadow-sm hover:border-slate-300 transition-all cursor-pointer group text-left w-full"
       >
-        <div className="flex flex-col md:flex-row items-center gap-4 md:gap-6">
-          <div className="flex items-center gap-4 w-full md:w-2/3">
-            <HealthAvatar
-              initials={client.initials}
-              health={client.health}
-            />
-            <div>
+        <div className="flex items-center gap-4">
+          <HealthAvatar
+            initials={client.initials}
+            health={client.health}
+          />
+          <div className="flex-1 min-w-0">
+            <div className="flex items-center justify-between gap-3">
               <h3 className="font-bold text-slate-900 transition-colors">
                 {client.name}
               </h3>
-              <p className="text-xs text-slate-500">
+              <div className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded border text-xs font-medium shrink-0 ${ppTag.style}`}>
+                {ppTag.icon}
+                {ppTag.label}
+              </div>
+            </div>
+              <p className="text-xs text-slate-500 flex items-center gap-1.5">
+                <Mail size={10} className="text-slate-400" />
                 {client.email}
               </p>
-              <p className="text-xs text-slate-500 mt-0.5">
-                {client.cases.length} {client.cases.length === 1 ? "juicio" : "juicios"}
-              </p>
               <div className="mt-1 flex items-center gap-3 flex-wrap">
+                <p className="text-xs font-medium text-slate-600 flex items-center gap-1">
+                  <Gavel size={10} className="text-slate-400" />
+                  {client.cases.length} {client.cases.length === 1 ? "juicio" : "juicios"}
+                </p>
+                {(pendingTaskCounts.today > 0 || pendingTaskCounts.otherDays > 0) && (
+                  <span className="text-slate-300 text-xs leading-none">•</span>
+                )}
                 {pendingTaskCounts.today > 0 && (
-                  <p className="text-xs font-medium text-rose-700">
+                  <p className="text-xs font-medium text-rose-700 flex items-center gap-1">
+                    <ClipboardList size={10} className="text-rose-400" />
                     {pendingTaskCounts.today} {pendingTaskCounts.today === 1 ? "tarea" : "tareas"} para hoy
                   </p>
                 )}
@@ -211,22 +222,16 @@ export function ClientList({
                   <span className="text-slate-300 text-xs leading-none">•</span>
                 )}
                 {pendingTaskCounts.otherDays > 0 && (
-                  <p className="text-xs font-medium text-slate-600">
-                    {pendingTaskCounts.otherDays} {pendingTaskCounts.otherDays === 1 ? "tarea" : "tareas"} proximas
+                  <p className="text-xs font-medium text-slate-600 flex items-center gap-1">
+                    <CalendarClock size={10} className="text-slate-400" />
+                    {pendingTaskCounts.otherDays} {pendingTaskCounts.otherDays === 1 ? "tarea proxima" : "tareas proximas"}
                   </p>
                 )}
               </div>
             </div>
+            <div className="h-4 w-px bg-slate-200 shrink-0" />
+            <ChevronRight className="text-slate-300 group-hover:text-slate-400 transition-colors shrink-0" size={16} />
           </div>
-          <div className="flex items-center justify-end gap-3 w-full md:w-1/3 pl-2">
-            <div className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-md border text-sm font-medium ${ppTag.style}`}>
-              {ppTag.icon}
-              {ppTag.label}
-            </div>
-            <div className="h-6 w-px bg-slate-200" />
-            <ChevronRight className="text-slate-300 group-hover:text-slate-400 transition-colors" />
-          </div>
-        </div>
       </button>
     )
   }

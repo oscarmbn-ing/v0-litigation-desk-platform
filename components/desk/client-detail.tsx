@@ -26,6 +26,7 @@ import {
   Search,
   HelpCircle,
   Mail,
+  User,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
@@ -462,14 +463,19 @@ export function ClientDetail({
         </div>
       </div>
 
+      <div className="h-px bg-slate-200 mb-4" />
+
       <div className="flex-1 overflow-y-auto pr-1">
       {/* Header + Context Switch */}
       <Card className="rounded-3xl shadow-sm border border-slate-200 mb-6 relative z-10 overflow-visible">
         <CardContent className="p-8 md:p-10">
           <div className="flex flex-col md:flex-row justify-between items-start mb-6 gap-4">
-            <div>
-              <div className="flex items-center gap-3 mb-1">
-                <h2 className="text-3xl font-extrabold text-slate-900 tracking-tight">
+            <div className="flex flex-col gap-1.5">
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 flex justify-center shrink-0">
+                  <User size={14} className="text-slate-400" />
+                </div>
+                <h2 className="text-2xl font-bold text-slate-900 tracking-tight">
                   {client.name}
                 </h2>
                 <a
@@ -478,61 +484,73 @@ export function ClientDetail({
                   rel="noreferrer"
                   className="text-emerald-500 hover:text-emerald-600 transition-colors"
                 >
-                  <MessageCircle size={24} fill="currentColor" className="text-white" strokeWidth={0} />
-                  <MessageCircle size={24} className="absolute -mt-6" />
+                  <MessageCircle size={20} fill="currentColor" className="text-white" strokeWidth={0} />
+                  <MessageCircle size={20} className="absolute -mt-5" />
                 </a>
               </div>
 
+              <div className="flex items-center gap-2.5">
+                <div className="w-4 flex justify-center shrink-0">
+                  <Mail size={13} className="text-slate-400" />
+                </div>
+                <span className="text-base text-slate-500">{client.email}</span>
+              </div>
+
               {/* Dynamic selector */}
-              <div className="flex items-center gap-2 mt-1 relative">
+              <div className="flex items-center gap-2.5 relative">
                 {contextView === "judicial" && (
                   <>
-                    <button
-                      type="button"
-                      className={`flex items-center gap-2 px-3 py-1.5 rounded-lg border transition-all ${client.cases.length > 1
-                        ? "cursor-pointer hover:bg-slate-50 border-violet-200 bg-white shadow-sm"
-                        : "border-transparent bg-slate-50 text-slate-500"
-                        }`}
-                      onClick={() =>
-                        client.cases.length > 1 &&
-                        setShowCaseSelector(!showCaseSelector)
-                      }
-                    >
-                      <FolderOpen size={16} className="text-indigo-950" />
-                      <span className="text-sm font-bold text-slate-800">
-                        {activeCaseId}
-                      </span>
-                      <span className="text-sm text-slate-400">|</span>
-                      <span className="text-sm text-slate-600 font-medium">
-                        {activeCase?.creditor ?? client.activeCreditor}
-                      </span>
-                      {client.cases.length > 1 && (
-                        <ChevronDown
-                          size={14}
-                          className={`text-slate-400 transition-transform ${showCaseSelector ? "rotate-180" : ""}`}
-                        />
-                      )}
-                    </button>
-                    {showCaseSelector && (
-                      <div className="absolute top-full left-0 mt-2 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
-                        <div className="px-4 py-2 border-b border-slate-50 text-xs font-bold text-slate-400 uppercase tracking-wider">
-                          Cambiar Expediente
+                    <div className="w-4 flex justify-center shrink-0">
+                      <FolderOpen size={13} className="text-slate-400" />
+                    </div>
+                    <span className="text-base text-slate-500">Expediente:</span>
+                    <div className="relative">
+                      <button
+                        type="button"
+                        className={`flex items-center gap-1.5 px-2 py-0.5 rounded-md border transition-all text-base ${client.cases.length > 1
+                          ? "cursor-pointer hover:bg-slate-50 border-slate-200 bg-transparent"
+                          : "border-transparent text-slate-500"
+                          }`}
+                        onClick={() =>
+                          client.cases.length > 1 &&
+                          setShowCaseSelector(!showCaseSelector)
+                        }
+                      >
+                        <span className="font-bold text-slate-800">
+                          {activeCaseId}
+                        </span>
+                        <span className="text-slate-300">|</span>
+                        <span className="text-slate-600 font-medium">
+                          {activeCase?.creditor ?? client.activeCreditor}
+                        </span>
+                        {client.cases.length > 1 && (
+                          <ChevronDown
+                            size={14}
+                            className={`text-slate-400 transition-transform ${showCaseSelector ? "rotate-180" : ""}`}
+                          />
+                        )}
+                      </button>
+                      {showCaseSelector && (
+                        <div className="absolute top-full left-0 mt-1 w-64 bg-white rounded-xl shadow-xl border border-slate-100 py-2 z-50">
+                          <div className="px-4 py-2 border-b border-slate-50 text-xs font-bold text-slate-400 uppercase tracking-wider">
+                            Cambiar Expediente
+                          </div>
+                          {client.cases.map((c) => (
+                            <button
+                              type="button"
+                              key={c.id}
+                              className={`w-full text-left px-4 py-3 text-sm cursor-pointer transition-colors ${c.id === activeCaseId
+                                ? "bg-indigo-50 text-indigo-900 font-semibold"
+                                : "hover:bg-slate-50 text-slate-700"
+                                }`}
+                              onClick={() => handleCaseChange(c.id)}
+                            >
+                              {c.id} - {c.creditor}
+                            </button>
+                          ))}
                         </div>
-                        {client.cases.map((c) => (
-                          <button
-                            type="button"
-                            key={c.id}
-                            className={`w-full text-left px-4 py-3 text-sm cursor-pointer transition-colors ${c.id === activeCaseId
-                              ? "bg-indigo-50 text-indigo-900 font-semibold"
-                              : "hover:bg-slate-50 text-slate-700"
-                              }`}
-                            onClick={() => handleCaseChange(c.id)}
-                          >
-                            {c.id} - {c.creditor}
-                          </button>
-                        ))}
-                      </div>
-                    )}
+                      )}
+                    </div>
                   </>
                 )}
 
