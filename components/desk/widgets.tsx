@@ -51,17 +51,6 @@ export function DossierWidget({
   const [activeTab, setActiveTab] = useState<"caso" | "cliente">("caso")
   const [isEditing, setIsEditing] = useState(false)
   const [claveVisible, setClaveVisible] = useState(false)
-  const [claveVerificada, setClaveVerificada] = useState(false)
-  const [claveVerificando, setClaveVerificando] = useState(false)
-
-  const handleVerificarClave = () => {
-    if (claveVerificando || claveVerificada) return
-    setClaveVerificando(true)
-    setTimeout(() => {
-      setClaveVerificando(false)
-      setClaveVerificada(true)
-    }, 2500)
-  }
 
   // Committed state — Caso
   const [description, setDescription] = useState(initialDescription)
@@ -367,22 +356,6 @@ export function DossierWidget({
                       title={claveVisible ? "Ocultar" : "Mostrar"}
                     >
                       {claveVisible ? <EyeOff size={14} /> : <Eye size={14} />}
-                    </button>
-                    <button
-                      type="button"
-                      onClick={handleVerificarClave}
-                      title={claveVerificada ? "Verificada" : claveVerificando ? "Verificando..." : "Probar clave única"}
-                      disabled={claveVerificando}
-                      className={`w-6 h-6 rounded-full flex items-center justify-center transition-all border ${claveVerificada
-                        ? "bg-emerald-500 border-emerald-500 text-white"
-                        : claveVerificando
-                          ? "bg-white border-slate-300 text-slate-400"
-                          : "bg-white border-slate-300 text-slate-400 hover:border-emerald-400 hover:text-emerald-500"
-                        }`}
-                    >
-                      {claveVerificando
-                        ? <Loader2 size={12} strokeWidth={3} className="animate-spin" />
-                        : <Check size={12} strokeWidth={3} />}
                     </button>
                   </div>
                 </div>
