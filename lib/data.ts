@@ -5,6 +5,7 @@ export const JUDICIAL_STAGES = [
   { id: 3, name: "Admisibilidad", label: "Admisibilidad" },
   { id: 4, name: "Termino probatorio", label: "Probatorio" },
   { id: 5, name: "Sentencia", label: "Sentencia" },
+  { id: 6, name: "Apelación", label: "Apelación" },
 ]
 
 // --- DEFINICION DE ETAPAS (Contexto Proteccion Patrimonial) ---
@@ -109,6 +110,7 @@ export interface Client {
   rut: string
   claveUnica: string
   email: string
+  estadoJuicio?: "Activo" | "Dado de Baja" | "Archivo" | "Suspendido" | "En rebeldía"
   cases: CaseEntry[]
   activeCaseId: string
   activeCreditor: string

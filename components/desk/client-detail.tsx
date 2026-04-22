@@ -27,6 +27,7 @@ import {
   HelpCircle,
   Mail,
   User,
+  Activity,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 import { Card, CardContent } from "@/components/ui/card"
@@ -532,6 +533,15 @@ export function ClientDetail({
                     <Mail size={13} className="text-slate-400" />
                   </div>
                   <span className="text-base text-slate-500">{client.email}</span>
+                </div>
+
+                <div className="flex items-center gap-2.5">
+                  <div className="w-4 flex justify-center shrink-0">
+                    <Activity size={13} className="text-slate-400" />
+                  </div>
+                  <span className="text-base text-slate-500">
+                    Estado: {client.estadoJuicio ?? "Activo"}
+                  </span>
                 </div>
 
                 {/* Dynamic selector */}

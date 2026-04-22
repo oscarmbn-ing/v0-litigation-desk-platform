@@ -9,7 +9,7 @@ import { Button } from "@/components/ui/button"
 
 function getHeaderContent(pathname: string) {
   if (pathname.startsWith("/tareas")) {
-    return { title: "Misiones", subtitle: "Revision y accion sobre movimientos del expediente", showHeader: true, showLinks: true }
+    return { title: "Misiones", subtitle: "Revision y accion sobre movimientos del expediente", showHeader: false, showLinks: false }
   }
   if (pathname.match(/^\/clientes\/\d+/)) {
     return { title: "", subtitle: "", showHeader: false, showLinks: false }
